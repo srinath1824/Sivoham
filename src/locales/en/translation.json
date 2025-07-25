@@ -1,0 +1,61 @@
+{
+  "welcome": "Siva Kundalini sadhana",
+  "login": "Login",
+  "register": "Register",
+  "logout": "Logout",
+  "courses": "Courses",
+  "events": "Events",
+  "profile": "Profile",
+  "submit": "Submit",
+  "cancel": "Cancel",
+    "home": {
+      "successfullyRegistered": "Successfully registered!",
+      "registrationFailed": "Registration failed. Please try again.",
+      "title": "Siva Kundalini Sadhana",
+      "description": "The safest and the most organized form of practicing Kundalini Yoga is being offered in an unique way by Parama Pujya Sree Jeeveswara Yogi. The Sadhana methodology can take us towards self-realization by harnessing the most powerful Kundalini energy and experiencing its manifestations. It is one of the easiest, most practical, very powerful, result oriented and experiential ways of learning Kundalini Yoga in the presence of a self-realized and experienced Guru.",
+      "heroImageAlt": "Siva Kundalini Sadhana",
+      "joinNow": "Join Now",
+      "aboutImageAlt": "Guruji",
+      "aboutHeading": "About Sree Jeeveswara Yogi",
+      "aboutParagraph1": "Parama Pujya Sree Jeeveswara Yogi was born with Awakened Kundalini. In his childhood, when he went to Srisailam for Siva darsan, he unknowingly meets his Guru for the first time which changes his life forever. He once went into deep Samadhi in his school during meditation class. He practiced intense sadhana before attaining self-realization in early stages of his life. When he wanted to undergo Jeeva Samadhi at a very young age, his Guru directed him to teach this divine sadhana to humanity. Then, he renounced his blooming professional career and decided to dedicate his life to teach Siva Kundalini Sadhana to all.",
+      "aboutParagraph2": "He kept immense efforts on simplifying and optimizing the sadhana methodology to make it easier and more effective for common people to learn and practice. Leading a very humble family life, he is teaching Siva Kundalini Sadhana to thousands of people. He organized the course content in such a way that anyone, whether he is new to meditation or has many years of practice, can take the course and get utmost benefits at each level of the course.",
+      "whyHeading": "Why Siva Kundalini Sadhana",
+      "whyParagraph1": "There are many yogic practices in India which can help a person attain self-realization. However, there are quite a few of them which can be practiced by everyone in all walks of life and without any restrictions. Siva Kundalini Sadhana is a Unique course which lets the sadhak experience higher states like Samadhi in a very short time which otherwise takes several years of sadhana. Using this sadhana one can awaken their Kundalini Energy and activate the Chakras.",
+      "whyParagraph2": "Entering into Sushumna nadi is one of the most difficult achievements for a sadhak. Many yogis spend many years in intense sadhana to get to this state. In Siva Kundalini Sadhana, with the grace of Parama Pujya Sree Jeeveswara Yogi, one can not just enter into Sushumna nadi instantly but can also be in that state throughout the day.",
+      "whyParagraph3": "Sadhaks can solve all their problems as most of them are related to any one of the 7 Chakras. Siva Kundalini Sadhana is a path that can take you from connecting with the creator to transforming yourselves into the creator. This Divine Knowledge and experience is of immense value which cannot be paid. Hence it is offered Free of cost.",
+      "whyImageAlt": "Guruji",
+      "gallery": "Gallery",
+      "testimonials": "Testimonials",
+      "testimonialsList": {
+        "0": {
+          "name": "Ramananda Swami",
+          "desc": "Sanyasi, Badrinath",
+          "text": "I spent many years in Himalayas and travelled across India in pursuit of Moksha. Only a self-experienced person can guide others to the path of liberation. Guru Sree Jeeveswara Yogi is one of the rarest Advaitha Shaktipath Gurus. I feel so blessed and fortunate to have found him."
+        },
+        "1": {
+          "name": "Mrs. Rajya Lakshmi",
+          "desc": "Retd. Teacher",
+          "text": "Parama Pujya Sree Jeeveswara Yogi is none the less than Dakshinamurthy himself disguised as a common man incarnated to uplift ignorant people like us with boundless Compassion. He is Shiva himself."
+        },
+        "2": {
+          "name": "Mr. Suresh Kalimahanthi",
+          "desc": "IT, USA",
+          "text": "I have read a lot of books on Kundalini and many Upanishads. However, there is only a mention of how to do and what to do in them. Sree Jeeveswara Yogi is imparting that practical knowledge whole heartedly without expecting anything from us."
+        }
+      }
+    },
+    "nav": {
+      "home": "Home",
+      "about": "About",
+      "programs": "Programs",
+      "gallery": "Gallery",
+      "testimonials": "Testimonials",
+      "joinUs": "Join Us",
+      "events": "Events",
+      "courses": "Courses",
+      "progress": "Progress",
+      "admin": "Admin",
+      "login": "Login",
+      "logout": "Logout"
+    }
+} 

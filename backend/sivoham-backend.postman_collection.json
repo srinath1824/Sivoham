@@ -1,0 +1,324 @@
+{
+  "info": {
+    "_postman_id": "b1e1e1e1-1234-5678-9abc-def012345678",
+    "name": "Sivoham Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"mobile\": \"9876543210\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"comment\": \"I want to join.\",\n  \"place\": \"Hyderabad\",\n  \"gender\": \"Male\",\n  \"age\": 30,\n  \"preferredLang\": \"English\",\n  \"refSource\": \"Friend\",\n  \"referrerInfo\": \"Ravi\",\n  \"country\": \"India\",\n  \"profession\": \"Engineer\",\n  \"address\": \"123 Main St\",\n  \"email\": \"john@example.com\",\n  \"isAdmin\": true,\n  \"isSelected\": true\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/register",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Registers a new user. The mobile number must be unique. If a user with the same mobile already exists, a 400 error is returned. To create an admin user, set isAdmin: true and isSelected: true in the request body."
+      },
+      "response": [
+        {
+          "code": 400,
+          "name": "Duplicate Mobile Error",
+          "body": "{\n  \"error\": \"User with provided mobile already exists\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"mobile\": \"9876543210\",\n  \"otp\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/login",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "login"]
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "if (pm.response.code === 200) {",
+                "  var json = pm.response.json();",
+                "  if (json.token) {",
+                "    pm.collectionVariables.set('jwt', json.token);",
+                "    pm.environment.set('jwt', json.token);",
+                "  }",
+                "}"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Get All Users (Admin)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/user/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "user", ""]
+        }
+      }
+    },
+    {
+      "name": "Get User by ID (Admin or Self)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/user/{{userId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "user", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update User (Admin or Self)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"mobile\": \"1234567890\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/user/{{userId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "user", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Delete User (Admin)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/user/{{userId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "user", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get Current User Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/user/me/profile",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "user", "me", "profile"]
+        }
+      }
+    },
+    {
+      "name": "Get Courses for Current User",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/courses/me",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "courses", "me"]
+        }
+      }
+    },
+    {
+      "name": "Update Courses for Current User",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"level1\": { \"completed\": true, \"completedCount\": 1, \"history\": [], \"feedback\": [] },\n  \"level2\": { \"completed\": false, \"completedCount\": 0, \"history\": [], \"feedback\": [] },\n  \"test\": { \"completed\": false, \"completedCount\": 0, \"passed\": false, \"history\": [] },\n  \"level3\": { \"completed\": false, \"completedCount\": 0, \"history\": [], \"feedback\": [] },\n  \"level4\": { \"completed\": false, \"completedCount\": 0, \"history\": [], \"feedback\": [] },\n  \"level5\": { \"completed\": false, \"completedCount\": 0, \"history\": [], \"feedback\": [] }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/courses/me",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "courses", "me"]
+        }
+      }
+    },
+    {
+      "name": "Admin: Get Courses for Any User",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/courses/user/{{userId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "courses", "user", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get Events for Current User",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/events/me",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "events", "me"]
+        }
+      }
+    },
+    {
+      "name": "Update Events for Current User",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"eventsRegistered\": [\n    {\n      \"dateRegistered\": \"2024-06-01T00:00:00.000Z\",\n      \"eventDate\": \"2024-06-10T00:00:00.000Z\",\n      \"eventName\": \"Yoga Workshop\",\n      \"registeredId\": \"reg123\",\n      \"selected\": true,\n      \"venue\": \"Sample Venue\",\n      \"location\": \"Sample Location\"\n    }\n  ],\n  \"eventsAttended\": [\n    {\n      \"dateAttended\": \"2024-06-10T00:00:00.000Z\",\n      \"eventDate\": \"2024-06-10T00:00:00.000Z\",\n      \"eventName\": \"Yoga Workshop\",\n      \"registeredId\": \"reg123\",\n      \"venue\": \"Sample Venue\",\n      \"location\": \"Sample Location\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/events/me",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "events", "me"]
+        }
+      }
+    },
+    {
+      "name": "Admin: Get Events for Any User",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/events/user/{{userId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "events", "user", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Admin: Approve User",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/admin/user/{{userId}}/approve",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "admin", "user", "{{userId}}", "approve"]
+        }
+      }
+    },
+    {
+      "name": "Admin: Reject User",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/admin/user/{{userId}}/reject",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "admin", "user", "{{userId}}", "reject"]
+        }
+      }
+    },
+    {
+      "name": "Admin: Update User (Edit)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"mobile\": \"1234567890\",\n  \"comment\": \"Updated comment\",\n  \"place\": \"Chennai\",\n  \"gender\": \"Female\",\n  \"age\": 28,\n  \"preferredLang\": \"Telugu\",\n  \"refSource\": \"Website\",\n  \"referrerInfo\": \"Google\",\n  \"country\": \"India\",\n  \"profession\": \"Doctor\",\n  \"address\": \"456 Main St\",\n  \"email\": \"jane@example.com\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/admin/user/{{userId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "admin", "user", "{{userId}}"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "jwt", "value": "" },
+    { "key": "userId", "value": "" }
+  ]
+} 

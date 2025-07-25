@@ -1,0 +1,26 @@
+{
+  "short_name": "Siva Sadhana",
+  "name": "Siva Kundalini Sadhana",
+  "description": "Siva Kundalini Sadhana - Experience peace, transformation, and spiritual growth through Kundalini Yoga and meditation. Join our free programs and discover your true self.",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "./images/SKS_Logo_4K-1.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "./images/SKS_Logo_4K-1.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#de6b2f",
+  "background_color": "#fff7f0"
+}
