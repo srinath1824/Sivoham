@@ -173,20 +173,20 @@ export default function Home() {
         </div>
       </section>
       {/* Programs Section */}
-      <section id="programs" style={{ padding: '2rem 0' }}>
+      <section id="programs">
         <Suspense fallback={<SectionLoader />}>
           <Programs />
         </Suspense>
       </section>
       {/* Gallery Section */}
-      <section id="gallery" style={{ background: '#fff7f0', padding: '2rem 0' }}>
+      <section id="gallery" style={{ background: '#fff7f0', padding: '2rem' }}>
         <h2 className="section-heading">{t('home.gallery')}</h2>
         <Suspense fallback={<SectionLoader />}>
           <Gallery />
         </Suspense>
       </section>
       {/* Testimonials Section */}
-      <section id="testimonials" style={{ background: '#ffff', padding: '2rem 0' }} >
+      <section id="testimonials" style={{ background: '#ffff', padding: '2rem' }} >
         <h2 className="section-heading">{t('home.testimonials')}</h2>
         <div className="testimonials-grid">
           {testimonials.map((tst, i) => (

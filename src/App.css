@@ -204,7 +204,7 @@ footer, .footer {
   justify-content: center;
   gap: 3.5rem;
   width: 100%;
-  max-width: 1100px;
+  /* max-width: 1100px; */
   margin: 0 auto;
   position: relative;
   z-index: 1;
@@ -226,7 +226,7 @@ footer, .footer {
 .home-hero-text {
   flex: 1.2 1 0;
   min-width: 240px;
-  max-width: 520px;
+  max-width: 50%;
   text-align: left;
   color: var(--text);
   font-family: 'Lora', serif;
@@ -486,9 +486,9 @@ footer, .footer {
 
 /* Responsive Utilities */
 @media (max-width: 600px) {
-  .main-content {
+  /* .main-content {
     padding: 1rem 0;
-  }
+  } */
   .section-heading {
     font-size: 1.5rem;
   }
@@ -502,6 +502,11 @@ footer, .footer {
   .contact-form,
   .testimonial-card {
     padding: 1.2rem 0.7rem;
+  }
+  .mission-image-bg {
+    position: absolute;
+    opacity: 0.2;
+    height: 50rem;
   }
 }
 
@@ -555,13 +560,13 @@ footer, .footer {
   align-items: stretch;
   justify-content: center;
   width: 100%;
-  max-width: 1100px;
+  /* max-width: 1100px; */
   gap: 3.5rem;
 }
 .mission-text {
   flex: 1.2 1 0;
   min-width: 240px;
-  max-width: 520px;
+  max-width: 50%;
   /* background: #fff; */
   border-radius: 1.5rem;
   /* box-shadow: 0 8px 32px rgba(127, 156, 245, 0.10); */
@@ -589,7 +594,7 @@ footer, .footer {
   padding: 0;
 }
 .mission-image-bg {
-  flex: 1 1 0;
+  /* flex: 1 1 0; */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -780,6 +785,11 @@ video {
   video {
     max-width: 100%;
     height: auto;
+  }
+  .mission-image-bg {
+    position: absolute;
+    opacity: 0.2;
+    height: 50rem;
   }
 }
 

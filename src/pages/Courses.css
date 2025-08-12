@@ -1,0 +1,191 @@
+/* Courses Page Styles */
+
+/* Login Required Section */
+.login-required-container {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff7f0;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(222, 107, 47, 0.07);
+  margin: 2rem auto;
+  max-width: 480px;
+  padding: 2.5rem 1.5rem;
+}
+
+.login-required-icon {
+  font-size: 54px;
+  color: #de6b2f;
+  margin-bottom: 16px;
+}
+
+.login-required-title {
+  color: #de6b2f;
+  font-family: 'Lora', serif;
+  font-weight: 700;
+  margin-bottom: 12px;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.login-required-text {
+  color: #1a2341;
+  font-family: 'Lora', serif;
+  font-size: 1.15rem;
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.login-button {
+  margin-top: 24px;
+  background: #de6b2f;
+  color: #fff;
+  font-family: 'Lora', serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 2.5rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(222, 107, 47, 0.07);
+  transition: background 0.2s;
+}
+
+.login-button:hover {
+  background: #b45309;
+}
+
+/* Dialog Input Styles */
+.dialog-input {
+  padding: 8px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dialog-textarea {
+  padding: 8px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  min-height: 60px;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+/* Awaiting Approval Styles */
+.awaiting-approval-icon {
+  font-size: 54px;
+  color: #de6b2f;
+  margin-bottom: 16px;
+}
+
+.awaiting-approval-title {
+  color: #de6b2f;
+  font-family: 'Lora', serif;
+  font-weight: 700;
+  margin-bottom: 12px;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.awaiting-approval-text {
+  color: #1a2341;
+  font-family: 'Lora', serif;
+  font-size: 1.15rem;
+  text-align: center;
+  margin-bottom: 0;
+}
+
+/* Level 5 Apply Button */
+.level5-apply-button {
+  background: linear-gradient(90deg, #de6b2f 0%, #b45309 100%);
+  color: #fff;
+  font-family: 'Lora', serif;
+  font-weight: 700;
+  font-size: 1.35rem;
+  border: none;
+  border-radius: 2rem;
+  padding: 1.1rem 3.5rem;
+  box-shadow: 0 4px 24px rgba(222, 107, 47, 0.13);
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.2s, transform 0.15s;
+  outline: none;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.level5-apply-button:hover {
+  background: linear-gradient(90deg, #b45309 0%, #de6b2f 100%);
+}
+
+.level5-apply-button:focus {
+  transform: scale(1.04);
+}
+
+.level5-apply-button:blur {
+  transform: scale(1);
+}
+
+/* Level 5 List Styles */
+.level5-info-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  font-family: 'Lora', serif;
+}
+
+.level5-info-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.level5-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.level5-info-icon {
+  font-size: 22px;
+  margin-right: 12px;
+  line-height: 1.2;
+}
+
+.level5-info-icon.primary {
+  color: #de6b2f;
+}
+
+.level5-info-icon.secondary {
+  color: #b45309;
+}
+
+.level5-info-icon.tertiary {
+  color: #1a2341;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-required-container {
+    margin: 1rem;
+    padding: 2rem 1rem;
+  }
+  
+  .login-required-title {
+    font-size: 1.75rem;
+  }
+  
+  .login-required-text {
+    font-size: 1rem;
+  }
+  
+  .level5-apply-button {
+    font-size: 1.2rem;
+    padding: 1rem 2.5rem;
+  }
+}

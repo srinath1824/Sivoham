@@ -4,7 +4,6 @@ import React, { useEffect, useState, useRef } from 'react';
 const galleryImages = [
   'https://www.sivakundalini.org/resources/images/gallery/thumbs/1.jpg',
   'https://www.sivakundalini.org/resources/images/gallery/thumbs/2.jpg',
-  'https://www.sivakundalini.org/resources/images/gallery/thumbs/Hemanth.jpg',
   'https://www.sivakundalini.org/resources/images/gallery/thumbs/101.jpg',
   'https://www.sivakundalini.org/resources/images/gallery/thumbs/9.jpg',
   'https://www.sivakundalini.org/resources/images/gallery/thumbs/100.jpg',

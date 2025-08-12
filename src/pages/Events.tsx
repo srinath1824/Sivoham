@@ -3,6 +3,7 @@ import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, T
 import { PAST_EVENTS, UPCOMING_EVENTS } from '../config/constants.ts';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import Barcode from 'react-barcode';
 
 interface EventType {
   _id: string;
@@ -196,7 +197,7 @@ export default function Events() {
 
   return (
     <main className="main-content" style={{ minHeight: 'calc(100vh - 120px)', background: '#fff7f0', padding: '2rem 0 2rem 0' }}>
-      <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 1, md: 2 } }}>
+      <Box sx={{ maxWidth: '100%', mx: 'auto', px: { xs: 1, md: 2 }, paddingBottom: 10 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 4, justifyContent: 'flex-start' }}>
           <Tab label="Events" />
           {user && <Tab label="Registered Events" />}
@@ -342,7 +343,14 @@ export default function Events() {
                         <TableCell>{reg.eventId?.date ? formatDateTime(reg.eventId.date) : '-'}</TableCell>
                         <TableCell>{reg.eventId?.venue}</TableCell>
                         <TableCell>{reg.eventId?.location}</TableCell>
-                        <TableCell style={{ fontWeight: 700 }}>{reg.registrationId || reg.registeredId || '-'}</TableCell>
+                        <TableCell style={{ fontWeight: 700 }}>
+                          {reg.registrationId || reg.registeredId || '-'}
+                          {reg.registrationId && (
+                            <div style={{ marginTop: 8 }}>
+                              <Barcode value={reg.registrationId} width={1.5} height={40} fontSize={12} displayValue={false} />
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell style={{ color: reg.status === 'approved' ? 'green' : reg.status === 'pending' ? '#b45309' : 'red', fontWeight: 700 }}>
                           {reg.status === 'approved' ? 'Approved' : reg.status === 'pending' ? 'Pending' : 'Rejected'}
                         </TableCell>

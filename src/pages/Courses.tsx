@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar, Grid } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
+import './Courses.css';
 import Sidebar from '../components/courses/Sidebar.tsx';
 import VideoPlayer from '../components/courses/VideoPlayer.tsx';
 import FeedbackSection from '../components/courses/FeedbackSection.tsx';
@@ -68,14 +69,14 @@ function LoginDialog({ open, onClose, onLoginSuccess }: { open: boolean, onClose
             placeholder="Mobile Number"
             value={mobile}
             onChange={e => setMobile(e.target.value)}
-            style={{ padding: 8, fontSize: 16, borderRadius: 4, border: '1px solid #ccc' }}
+            className="dialog-input"
           />
           <input
             type="text"
             placeholder="OTP"
             value={otp}
             onChange={e => setOtp(e.target.value)}
-            style={{ padding: 8, fontSize: 16, borderRadius: 4, border: '1px solid #ccc' }}
+            className="dialog-input"
           />
           {error && <Alert severity="error">{error}</Alert>}
         </Box>
@@ -126,27 +127,27 @@ function RegistrationDialog({ open, onClose, mobile, onRegisterSuccess }: { open
             placeholder="First Name"
             value={firstName}
             onChange={e => setFirstName(e.target.value)}
-            style={{ padding: 8, fontSize: 16, borderRadius: 4, border: '1px solid #ccc' }}
+            className="dialog-input"
           />
           <input
             type="text"
             placeholder="Last Name"
             value={lastName}
             onChange={e => setLastName(e.target.value)}
-            style={{ padding: 8, fontSize: 16, borderRadius: 4, border: '1px solid #ccc' }}
+            className="dialog-input"
           />
           <input
             type="text"
             placeholder="Email (optional)"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            style={{ padding: 8, fontSize: 16, borderRadius: 4, border: '1px solid #ccc' }}
+            className="dialog-input"
           />
           <textarea
             placeholder="Comment (why do you want to join?)"
             value={comment}
             onChange={e => setComment(e.target.value)}
-            style={{ padding: 8, fontSize: 16, borderRadius: 4, border: '1px solid #ccc', minHeight: 60 }}
+            className="dialog-textarea"
           />
           {error && <Alert severity="error">{error}</Alert>}
         </Box>
@@ -288,28 +289,15 @@ const Courses = () => {
 
   if (!user) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fff7f0', borderRadius: 16, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', margin: '2rem auto', maxWidth: 480, padding: '2.5rem 1.5rem' }}>
-        <span style={{ fontSize: 54, color: '#de6b2f', marginBottom: 16 }}>🔒</span>
-        <h2 style={{ color: '#de6b2f', fontFamily: 'Lora, serif', fontWeight: 700, marginBottom: 12, fontSize: '2rem', textAlign: 'center' }}>Login Required</h2>
-        <p style={{ color: '#1a2341', fontFamily: 'Lora, serif', fontSize: '1.15rem', textAlign: 'center', marginBottom: 0 }}>
+      <div className="login-required-container">
+        <span className="login-required-icon">🔒</span>
+        <h2 className="login-required-title">Login Required</h2>
+        <p className="login-required-text">
           You can only view this page if you are <b>logged in</b>.<br />
           Please log in to access your courses and progress.
         </p>
         <button
-          style={{
-            marginTop: 24,
-            background: '#de6b2f',
-            color: '#fff',
-            fontFamily: 'Lora, serif',
-            fontWeight: 700,
-            fontSize: '1.1rem',
-            border: 'none',
-            borderRadius: 8,
-            padding: '0.7rem 2.5rem',
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(222,107,47,0.07)',
-            transition: 'background 0.2s',
-          }}
+          className="login-button"
           onClick={() => setLoginOpen(true)}
         >
           Login
@@ -332,10 +320,10 @@ const Courses = () => {
   // Block access if user is not approved
   if (user && user.isSelected === false) {
     return (
-      <Box sx={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fff7f0', borderRadius: 16, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', margin: '2rem auto', maxWidth: 480, padding: '2.5rem 1.5rem' }}>
-        <span style={{ fontSize: 54, color: '#de6b2f', marginBottom: 16 }}>⏳</span>
-        <h2 style={{ color: '#de6b2f', fontFamily: 'Lora, serif', fontWeight: 700, marginBottom: 12, fontSize: '2rem', textAlign: 'center' }}>Awaiting Approval</h2>
-        <p style={{ color: '#1a2341', fontFamily: 'Lora, serif', fontSize: '1.15rem', textAlign: 'center', marginBottom: 0 }}>
+      <Box className="login-required-container">
+        <span className="awaiting-approval-icon">⏳</span>
+        <h2 className="awaiting-approval-title">Awaiting Approval</h2>
+        <p className="awaiting-approval-text">
           Your registration is pending admin approval.<br />
           You will be notified once your account is approved.
         </p>
@@ -752,76 +740,45 @@ const Courses = () => {
                 >
                   Important Information
                 </Typography>
-                <ul
-                  style={{
-                    listStyle: 'none',
-                    paddingLeft: 0,
-                    margin: 0,
-                    fontFamily: 'Lora, serif',
-                  }}
-                >
-                  <li style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 18 }}>
-                    <span
-                      style={{ color: '#de6b2f', fontSize: 22, marginRight: 12, lineHeight: 1.2 }}
-                    >
-                      🏛️
-                    </span>
+                <ul className="level5-info-list">
+                  <li className="level5-info-item">
+                    <span className="level5-info-icon primary">🏛️</span>
                     <span>
                       <b>Level 5 will be conducted in the Ashram.</b> This is an in-person advanced
                       initiation for eligible sadhaks.
                     </span>
                   </li>
-                  <li style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 18 }}>
-                    <span
-                      style={{ color: '#b45309', fontSize: 22, marginRight: 12, lineHeight: 1.2 }}
-                    >
-                      🌟
-                    </span>
+                  <li className="level5-info-item">
+                    <span className="level5-info-icon secondary">🌟</span>
                     <span>
                       <b>Only sadhaks selected by Guruji</b> will be invited to attend Level 5.
                       Selection is based on dedication and progress.
                     </span>
                   </li>
-                  <li style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 18 }}>
-                    <span
-                      style={{ color: '#1a2341', fontSize: 22, marginRight: 12, lineHeight: 1.2 }}
-                    >
-                      📲
-                    </span>
+                  <li className="level5-info-item">
+                    <span className="level5-info-icon tertiary">📲</span>
                     <span>
                       <b>Invitations will be sent via WhatsApp</b> to selected sadhaks. Please
                       ensure your contact details are up to date.
                     </span>
                   </li>
-                  <li style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 18 }}>
-                    <span
-                      style={{ color: '#de6b2f', fontSize: 22, marginRight: 12, lineHeight: 1.2 }}
-                    >
-                      📝
-                    </span>
+                  <li className="level5-info-item">
+                    <span className="level5-info-icon primary">📝</span>
                     <span>
                       <b>Apply for Sakthipatham</b> only after you have successfully completed Level
                       5.
                     </span>
                   </li>
-                  <li style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 18 }}>
-                    <span
-                      style={{ color: '#b45309', fontSize: 22, marginRight: 12, lineHeight: 1.2 }}
-                    >
-                      💸
-                    </span>
+                  <li className="level5-info-item">
+                    <span className="level5-info-icon secondary">💸</span>
                     <span>
                       <b>Selected sadhaks</b> for Level 5 are requested to make a{' '}
                       <span style={{ color: '#de6b2f', fontWeight: 600 }}>donation of xxxxx</span>{' '}
                       to support the Ashram and the spiritual mission.
                     </span>
                   </li>
-                  <li style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 0 }}>
-                    <span
-                      style={{ color: '#1a2341', fontSize: 22, marginRight: 12, lineHeight: 1.2 }}
-                    >
-                      🙏
-                    </span>
+                  <li className="level5-info-item">
+                    <span className="level5-info-icon tertiary">🙏</span>
                     <span>
                       <b>Sadhaks selected for Sakthipatham</b> should make a{' '}
                       <span style={{ color: '#b45309', fontWeight: 600 }}>donation of xxxxx</span>{' '}
@@ -843,35 +800,7 @@ const Courses = () => {
                 For any questions or clarifications, please contact the Ashram administration.
               </Typography>
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                <button
-                  style={{
-                    background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)',
-                    color: '#fff',
-                    fontFamily: 'Lora, serif',
-                    fontWeight: 700,
-                    fontSize: '1.35rem',
-                    border: 'none',
-                    borderRadius: '2rem',
-                    padding: '1.1rem 3.5rem',
-                    boxShadow: '0 4px 24px rgba(222,107,47,0.13)',
-                    cursor: 'pointer',
-                    letterSpacing: 0.5,
-                    transition: 'background 0.2s, transform 0.15s',
-                    outline: 'none',
-                    marginTop: 0,
-                    marginBottom: 0,
-                  }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background =
-                      'linear-gradient(90deg, #b45309 0%, #de6b2f 100%)')
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background =
-                      'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)')
-                  }
-                  onFocus={(e) => (e.currentTarget.style.transform = 'scale(1.04)')}
-                  onBlur={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                >
+                <button className="level5-apply-button">
                   Apply
                 </button>
               </Box>
