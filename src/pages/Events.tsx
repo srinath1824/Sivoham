@@ -69,6 +69,7 @@ export default function Events() {
   const [registeredEvents, setRegisteredEvents] = useState<RegistrationType[]>([]);
   const [tab, setTab] = useState(0);
   const [barcodeDialog, setBarcodeDialog] = useState<{ open: boolean; regId: string; qrCode: string }>({ open: false, regId: '', qrCode: '' });
+  const [detailsDialog, setDetailsDialog] = useState<{ open: boolean; registration: RegistrationType | null }>({ open: false, registration: null });
 
   const SKS_LEVELS = [
     'Level-5.1', 'Level-5', 'Level-4', 'Level-3', 'Level-2', 'Level-1', 'Not done any Level'
@@ -338,23 +339,23 @@ export default function Events() {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Event</TableCell>
-                      <TableCell>Date</TableCell>
-                      <TableCell>Venue</TableCell>
-                      <TableCell>Location</TableCell>
-                      <TableCell>Registration ID</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Attendance</TableCell>
-                      <TableCell>Details</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Event</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Date</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Venue</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Location</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Registration ID</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Attendance</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Details</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {registeredEvents.map((reg: RegistrationType) => (
                       <TableRow key={reg._id}>
-                        <TableCell>{reg.eventId?.name}</TableCell>
-                        <TableCell>{reg.eventId?.date ? formatDateTime(reg.eventId.date) : '-'}</TableCell>
-                        <TableCell>{reg.eventId?.venue}</TableCell>
-                        <TableCell>{reg.eventId?.location}</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#de6b2f', fontFamily: 'Lora, serif' }}>{reg.eventId?.name}</TableCell>
+                        <TableCell sx={{ fontFamily: 'Lora, serif' }}>{reg.eventId?.date ? formatDateTime(reg.eventId.date) : '-'}</TableCell>
+                        <TableCell sx={{ fontFamily: 'Lora, serif' }}>{reg.eventId?.venue}</TableCell>
+                        <TableCell sx={{ fontFamily: 'Lora, serif' }}>{reg.eventId?.location}</TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>
@@ -372,28 +373,30 @@ export default function Events() {
                             )}
                           </Box>
                         </TableCell>
-                        <TableCell style={{ color: reg.status === 'approved' ? 'green' : reg.status === 'pending' ? '#b45309' : 'red', fontWeight: 700 }}>
+                        <TableCell sx={{ color: reg.status === 'approved' ? 'green' : reg.status === 'pending' ? '#b45309' : 'red', fontWeight: 700, fontFamily: 'Lora, serif' }}>
                           {reg.status === 'approved' ? 'Approved' : reg.status === 'pending' ? 'Pending' : 'Rejected'}
                         </TableCell>
-                        <TableCell style={{ color: reg.attended ? 'green' : '#888', fontWeight: 700 }}>
+                        <TableCell sx={{ color: reg.attended ? 'green' : '#888', fontWeight: 700, fontFamily: 'Lora, serif' }}>
                           {reg.attended ? '✓ Attended' : 'Not Attended'}
                         </TableCell>
                         <TableCell>
-                          <div style={{ fontSize: 13 }}>
-                            <div><b>Name:</b> {reg.fullName}</div>
-                            <div><b>Mobile:</b> {reg.mobile}</div>
-                            <div><b>Gender:</b> {reg.gender}</div>
-                            <div><b>Age:</b> {reg.age}</div>
-                            <div><b>Profession:</b> {reg.profession || '-'}</div>
-                            <div><b>Address:</b> {reg.address}</div>
-                            <div><b>SKS Level:</b> {reg.sksLevel}</div>
-                            <div><b>Miracles:</b> {reg.sksMiracle}</div>
-                            <div><b>Other:</b> {reg.otherDetails || '-'}</div>
-                            <div><b>For:</b> {reg.forWhom === 'self' ? 'Myself' : 'Someone Else'}</div>
-                          </div>
-                          {(['fullName','mobile','gender','age','address','sksLevel','sksMiracle','forWhom'].some(f => !reg[f] || reg[f] === '-')) &&
-                            <div style={{ color: 'red', fontSize: 11 }}>Warning: Some required fields are missing in this registration.</div>
-                          }
+                          <Button 
+                            variant="outlined" 
+                            size="small"
+                            onClick={() => setDetailsDialog({ open: true, registration: reg })}
+                            sx={{ 
+                              fontSize: '0.8rem',
+                              fontFamily: 'Lora, serif',
+                              borderColor: '#de6b2f',
+                              color: '#de6b2f',
+                              '&:hover': {
+                                borderColor: '#b45309',
+                                backgroundColor: '#fff3e0'
+                              }
+                            }}
+                          >
+                            View Details
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -456,6 +459,38 @@ export default function Events() {
           <DialogActions sx={{ justifyContent: 'center', pb: 3 }}>
             <Button 
               onClick={() => setBarcodeDialog({ open: false, regId: '', qrCode: '' })}
+              variant="contained"
+              sx={{ background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)' }}
+            >
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={detailsDialog.open} onClose={() => setDetailsDialog({ open: false, registration: null })} maxWidth="md" fullWidth>
+          <DialogTitle sx={{ fontFamily: 'Lora, serif', color: '#de6b2f' }}>
+            Registration Details
+          </DialogTitle>
+          <DialogContent sx={{ py: 3 }}>
+            {detailsDialog.registration && (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                <Box><strong>Full Name:</strong> {detailsDialog.registration.fullName}</Box>
+                <Box><strong>Mobile:</strong> {detailsDialog.registration.mobile}</Box>
+                <Box><strong>Gender:</strong> {detailsDialog.registration.gender}</Box>
+                <Box><strong>Age:</strong> {detailsDialog.registration.age}</Box>
+                <Box><strong>Profession:</strong> {detailsDialog.registration.profession || '-'}</Box>
+                <Box><strong>Address:</strong> {detailsDialog.registration.address}</Box>
+                <Box><strong>SKS Level:</strong> {detailsDialog.registration.sksLevel}</Box>
+                <Box><strong>SKS Miracles:</strong> {detailsDialog.registration.sksMiracle}</Box>
+                <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}><strong>Other Details:</strong> {detailsDialog.registration.otherDetails || '-'}</Box>
+                <Box><strong>Registering For:</strong> {detailsDialog.registration.forWhom === 'self' ? 'Myself' : 'Someone Else'}</Box>
+                <Box><strong>Registration ID:</strong> {detailsDialog.registration.registrationId || detailsDialog.registration.registeredId || '-'}</Box>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              onClick={() => setDetailsDialog({ open: false, registration: null })}
               variant="contained"
               sx={{ background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)' }}
             >
