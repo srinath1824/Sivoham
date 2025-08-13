@@ -135,7 +135,6 @@ export default function EventRegistrationsApproval() {
 
   const filterOptions = [
     { key: 'event', label: 'Event', type: 'select' as const, options: [
-      { value: '', label: 'All Events' },
       ...events.map(event => ({ value: event._id, label: event.name }))
     ]},
     { key: 'name', label: 'Registrant Name', type: 'text' as const },

@@ -80,11 +80,11 @@ export default function EventsManagement() {
 
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
-      const name = event.name?.toLowerCase() || '';
+      const eventId = event._id || '';
       const description = event.description?.toLowerCase() || '';
       const eventDate = event.date ? new Date(event.date).toISOString().split('T')[0] : '';
       
-      return (!filters.name || name.includes(filters.name.toLowerCase())) &&
+      return (!filters.name || eventId === filters.name) &&
              (!filters.description || description.includes(filters.description.toLowerCase())) &&
              (!filters.date || eventDate === filters.date);
     });
@@ -95,7 +95,9 @@ export default function EventsManagement() {
   };
 
   const filterOptions = [
-    { key: 'name', label: 'Event Name', type: 'text' as const },
+    { key: 'name', label: 'Event Name', type: 'select' as const, options: [
+      ...events.map(event => ({ value: event._id, label: event.name }))
+    ]},
     { key: 'description', label: 'Description', type: 'text' as const },
     { key: 'date', label: 'Date', type: 'date' as const }
   ];

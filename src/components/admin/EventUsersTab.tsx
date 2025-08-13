@@ -10,6 +10,7 @@ export default function EventUsersTab() {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [editingRegId, setEditingRegId] = useState<string | null>(null);
   const [selectedRegs, setSelectedRegs] = useState<string[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
 
   const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
 
@@ -28,8 +29,18 @@ export default function EventUsersTab() {
   }
 
   useEffect(() => {
+    fetchEvents();
     fetchData();
   }, []);
+
+  async function fetchEvents() {
+    try {
+      const res = await axios.get('/api/events');
+      setEvents(res.data);
+    } catch (err: any) {
+      console.error('Failed to fetch events:', err);
+    }
+  }
 
   async function handleApprove(regId: string) {
     try {
@@ -93,15 +104,17 @@ export default function EventUsersTab() {
 
   const filteredRegistrations = useMemo(() => {
     return registrations.filter(reg => {
-      const eventName = reg.eventId?.name?.toLowerCase() || '';
+      const eventId = reg.eventId?._id || '';
       const userName = reg.fullName?.toLowerCase() || '';
       const mobile = reg.mobile?.toLowerCase() || '';
       const status = reg.status?.toLowerCase() || '';
+      const attended = reg.attended ? 'yes' : 'no';
       
-      return (!filters.event || eventName.includes(filters.event.toLowerCase())) &&
+      return (!filters.event || eventId === filters.event) &&
              (!filters.name || userName.includes(filters.name.toLowerCase())) &&
              (!filters.mobile || mobile.includes(filters.mobile.toLowerCase())) &&
-             (!filters.status || status === filters.status);
+             (!filters.status || status === filters.status) &&
+             (!filters.attended || attended === filters.attended);
     });
   }, [registrations, filters]);
 
@@ -110,13 +123,19 @@ export default function EventUsersTab() {
   };
 
   const filterOptions = [
-    { key: 'event', label: 'Event', type: 'text' as const },
+    { key: 'event', label: 'Event', type: 'select' as const, options: [
+      ...events.map(event => ({ value: event._id, label: event.name }))
+    ]},
     { key: 'name', label: 'User Name', type: 'text' as const },
     { key: 'mobile', label: 'Mobile', type: 'text' as const },
     { key: 'status', label: 'Status', type: 'select' as const, options: [
       { value: 'pending', label: 'Pending' },
       { value: 'approved', label: 'Approved' },
       { value: 'rejected', label: 'Rejected' }
+    ]},
+    { key: 'attended', label: 'Attended', type: 'select' as const, options: [
+      { value: 'yes', label: 'Attended' },
+      { value: 'no', label: 'Not Attended' }
     ]}
   ];
 
@@ -170,11 +189,12 @@ export default function EventUsersTab() {
                 <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>User Name</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Mobile</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Attended</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredRegistrations.length === 0 && <TableRow><TableCell colSpan={6} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>No users found.</TableCell></TableRow>}
+              {filteredRegistrations.length === 0 && <TableRow><TableCell colSpan={7} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>No users found.</TableCell></TableRow>}
               {filteredRegistrations.map((reg: any, idx: number) => (
                 <TableRow key={reg.registrationId} hover sx={{ background: idx % 2 === 0 ? '#fff' : '#f9f4ee', '&:hover': { background: '#fff3e0' } }}>
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
@@ -188,6 +208,9 @@ export default function EventUsersTab() {
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{reg.fullName}</TableCell>
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{reg.mobile}</TableCell>
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: reg.status === 'approved' ? '#2e7d32' : reg.status === 'rejected' ? '#d32f2f' : '#ed6c02', fontWeight: 600 }}>{reg.status}</TableCell>
+                  <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: reg.attended ? '#2e7d32' : '#666', fontWeight: 600 }}>
+                    {reg.attended ? '✓ Attended' : 'Not Attended'}
+                  </TableCell>
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
                     {reg.status === 'pending' || editingRegId === reg.registrationId ? (
                       <>
