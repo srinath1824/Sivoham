@@ -19,7 +19,7 @@ export default function AdminFilters({ filters, onFilterChange, filterOptions }:
         {filterOptions.map((option) => {
           const isYesNoFilter = option.key === 'admin' || option.key === 'selected';
           return (
-          <Grid item xs={12} sm={isYesNoFilter ? 4 : 6} md={isYesNoFilter ? 2.5 : 3} key={option.key}>
+          <Grid item xs={12} sm={6} md={3} key={option.key}>
             {option.type === 'select' ? (
               <TextField
                 select
@@ -28,6 +28,7 @@ export default function AdminFilters({ filters, onFilterChange, filterOptions }:
                 label={option.label}
                 value={filters[option.key] || ''}
                 onChange={(e) => onFilterChange(option.key, e.target.value)}
+                sx={{ minWidth: '200px' }}
                 SelectProps={{
                   MenuProps: {
                     PaperProps: {
@@ -56,6 +57,7 @@ export default function AdminFilters({ filters, onFilterChange, filterOptions }:
                 label={option.label}
                 value={filters[option.key] || ''}
                 onChange={(e) => onFilterChange(option.key, e.target.value)}
+                sx={{ minWidth: '200px' }}
                 InputLabelProps={option.type === 'date' ? { shrink: true } : undefined}
               />
             )}

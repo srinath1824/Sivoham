@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, MenuItem } from '@mui/material';
 import AdminFilters from './AdminFilters.tsx';
 
 export default function EventsManagement() {
@@ -8,7 +8,8 @@ export default function EventsManagement() {
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [editEvent, setEditEvent] = useState<any>(null);
-  const [editForm, setEditForm] = useState({ name: '', date: '', description: '', venue: '', location: '', eventType: 'open' });
+  const [editForm, setEditForm] = useState({ name: '', date: '', description: '', venue: '', location: '', eventType: 'unlimited' });
+  const [isAddMode, setIsAddMode] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -34,21 +35,35 @@ export default function EventsManagement() {
         description: event.description || '',
         venue: event.venue || '',
         location: event.location || '',
-        eventType: event.eventType || 'open'
+        eventType: event.eventType || 'unlimited'
       });
     }
   }
 
   async function handleSaveEdit() {
     try {
-      await axios.put(`/api/events/${editEvent._id}`, editForm, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      if (isAddMode) {
+        await axios.post('/api/events', editForm, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+      } else {
+        await axios.put(`/api/events/${editEvent._id}`, editForm, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+      }
       setEditEvent(null);
+      setIsAddMode(false);
       fetchEvents();
-    } catch (err) {
-      alert('Failed to update event');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || (isAddMode ? 'Failed to create event' : 'Failed to update event');
+      alert(errorMessage);
     }
+  }
+
+  function handleAddNew() {
+    setIsAddMode(true);
+    setEditEvent({ _id: null });
+    setEditForm({ name: '', date: '', description: '', venue: '', location: '', eventType: 'unlimited' });
   }
 
   async function handleDelete(eventId: string) {
@@ -91,11 +106,27 @@ export default function EventsManagement() {
         Events Management
       </Typography>
 
-      <AdminFilters 
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        filterOptions={filterOptions}
-      />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <AdminFilters 
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          filterOptions={filterOptions}
+        />
+        <Button 
+          variant="contained" 
+          onClick={handleAddNew}
+          sx={{ 
+            background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)',
+            fontFamily: 'Lora, serif',
+            fontWeight: 600,
+            px: 3,
+            py: 1,
+            borderRadius: 2
+          }}
+        >
+          Add New Event
+        </Button>
+      </Box>
 
       <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', background: '#fff', mb: 4 }}>
         <Table>
@@ -124,9 +155,9 @@ export default function EventsManagement() {
         </Table>
       </TableContainer>
 
-      <Dialog open={!!editEvent} onClose={() => setEditEvent(null)} maxWidth="sm" fullWidth>
+      <Dialog open={!!editEvent} onClose={() => { setEditEvent(null); setIsAddMode(false); }} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ bgcolor: '#fff7f0', color: '#de6b2f', fontFamily: 'Lora, serif', fontWeight: 700, fontSize: '1.5rem' }}>
-          Edit Event
+          {isAddMode ? 'Add New Event' : 'Edit Event'}
         </DialogTitle>
         <DialogContent sx={{ p: 3, bgcolor: '#fff' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
@@ -179,11 +210,22 @@ export default function EventsManagement() {
               helperText={!editForm.location.trim() ? 'Location is required' : ''}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
+            <TextField
+              fullWidth
+              select
+              label="Event Type"
+              value={editForm.eventType}
+              onChange={(e) => setEditForm(prev => ({ ...prev, eventType: e.target.value }))}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            >
+              <MenuItem value="unlimited">Unlimited (No Approval Required)</MenuItem>
+              <MenuItem value="limited">Limited (Approval Required)</MenuItem>
+            </TextField>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3, bgcolor: '#fff7f0', gap: 1 }}>
           <Button 
-            onClick={() => setEditEvent(null)}
+            onClick={() => { setEditEvent(null); setIsAddMode(false); }}
             variant="outlined"
             sx={{ borderRadius: 2, px: 3 }}
           >
@@ -200,7 +242,7 @@ export default function EventsManagement() {
               '&:hover': { background: 'linear-gradient(90deg, #b45309 0%, #de6b2f 100%)' }
             }}
           >
-            Save Changes
+            {isAddMode ? 'Create Event' : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>

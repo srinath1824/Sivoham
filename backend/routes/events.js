@@ -6,17 +6,34 @@ const router = express.Router();
 
 // Get all events (public)
 router.get('/', async (req, res) => {
-  const events = await Event.find().sort({ date: 1 });
-  res.json(events);
+  try {
+    const events = await Event.find().sort({ date: 1 });
+    res.json(events);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Create event (admin only)
 router.post('/', auth, async (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
-  const { name, date, description, venue, location, eventType } = req.body;
-  if (!name || !date || !description || !venue || !location) return res.status(400).json({ error: 'All fields required' });
-  const event = await Event.create({ name, date, description, venue, location, eventType });
-  res.json(event);
+  try {
+    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+    const { name, date, description, venue, location, eventType } = req.body;
+    if (!name || !date || !description || !venue || !location) {
+      return res.status(400).json({ error: 'All fields required' });
+    }
+    const event = await Event.create({ 
+      name, 
+      date, 
+      description, 
+      venue, 
+      location, 
+      eventType: eventType || 'open' 
+    });
+    res.json(event);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Update event (admin only)

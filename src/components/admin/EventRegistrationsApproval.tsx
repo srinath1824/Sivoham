@@ -13,13 +13,24 @@ export default function EventRegistrationsApproval() {
   const [selectedRegs, setSelectedRegs] = useState<string[]>([]);
   const [barcodeDialog, setBarcodeDialog] = useState<{ open: boolean; regId: string; qrCode: string }>({ open: false, regId: '', qrCode: '' });
   const [detailsDialog, setDetailsDialog] = useState<{ open: boolean; registration: any | null }>({ open: false, registration: null });
+  const [events, setEvents] = useState<any[]>([]);
 
   const token = localStorage.getItem('token');
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {
+    fetchEvents();
     fetchRegistrations();
   }, []);
+
+  async function fetchEvents() {
+    try {
+      const res = await axios.get('/api/events');
+      setEvents(res.data.filter((event: any) => event.eventType === 'limited'));
+    } catch (err: any) {
+      console.error('Failed to fetch events:', err);
+    }
+  }
 
   async function fetchRegistrations() {
     setLoading(true);
@@ -106,12 +117,12 @@ export default function EventRegistrationsApproval() {
 
   const filteredRegistrations = useMemo(() => {
     return registrations.filter(reg => {
-      const eventName = reg.eventId?.name?.toLowerCase() || '';
+      const eventId = reg.eventId?._id || '';
       const userName = reg.fullName?.toLowerCase() || '';
       const mobile = reg.mobile?.toLowerCase() || '';
       const status = reg.status?.toLowerCase() || '';
       
-      return (!filters.event || eventName.includes(filters.event.toLowerCase())) &&
+      return (!filters.event || eventId === filters.event) &&
              (!filters.name || userName.includes(filters.name.toLowerCase())) &&
              (!filters.mobile || mobile.includes(filters.mobile.toLowerCase())) &&
              (!filters.status || status === filters.status);
@@ -123,7 +134,10 @@ export default function EventRegistrationsApproval() {
   };
 
   const filterOptions = [
-    { key: 'event', label: 'Event', type: 'text' as const },
+    { key: 'event', label: 'Event', type: 'select' as const, options: [
+      { value: '', label: 'All Events' },
+      ...events.map(event => ({ value: event._id, label: event.name }))
+    ]},
     { key: 'name', label: 'Registrant Name', type: 'text' as const },
     { key: 'mobile', label: 'Mobile', type: 'text' as const },
     { key: 'status', label: 'Status', type: 'select' as const, options: [
