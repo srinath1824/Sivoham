@@ -8,6 +8,7 @@ const EventSchema = new mongoose.Schema({
   location: { type: String, required: true },
   imageUrl: { type: String, required: false },
   eventType: { type: String, enum: ['limited', 'unlimited'], required: true, default: 'unlimited' },
+  messageTemplate: { type: String, required: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Event', EventSchema); 

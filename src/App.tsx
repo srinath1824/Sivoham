@@ -148,10 +148,11 @@ function App({ navigate }) {
   }
 
   return (
-    <div className="app-container">
-      <Navbar onLoginClick={handleLoginClick} user={user} onLogoutClick={handleLogout} />
-      <LoginDialog open={loginOpen} onLoginSuccess={handleLogin} onClose={() => setLoginOpen(false)} />
-      <Routes>
+    <ErrorBoundary fallback={<ErrorFallback />}>
+      <div className="app-container">
+        <Navbar onLoginClick={handleLoginClick} user={user} onLogoutClick={handleLogout} />
+        <LoginDialog open={loginOpen} onLoginSuccess={handleLogin} onClose={() => setLoginOpen(false)} />
+        <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/join" element={<Join handleLogin={handleLogin} />} />
         <Route path="/events" element={
@@ -190,9 +191,10 @@ function App({ navigate }) {
             </div>
           )
         } />
-      </Routes>
-      <Footer />
-    </div>
+        </Routes>
+        <Footer />
+      </div>
+    </ErrorBoundary>
   );
 }
 
@@ -239,6 +241,75 @@ function SectionLoader() {
   return (
     <div className="section-loader-wrapper">
       <div className="section-loader"></div>
+    </div>
+  );
+}
+
+/**
+ * Error boundary fallback component
+ */
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error boundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || <ErrorFallback />;
+    }
+    return this.props.children;
+  }
+}
+
+/**
+ * Error fallback component
+ */
+function ErrorFallback() {
+  return (
+    <div style={{ 
+      minHeight: '60vh', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      background: '#fff7f0', 
+      borderRadius: 16, 
+      boxShadow: '0 2px 12px rgba(222,107,47,0.07)', 
+      margin: '2rem auto', 
+      maxWidth: 480, 
+      padding: '2.5rem 1.5rem' 
+    }}>
+      <span style={{ fontSize: 54, color: '#de6b2f', marginBottom: 16 }}>⚠️</span>
+      <h2 style={{ color: '#de6b2f', fontFamily: 'Lora, serif', fontWeight: 700, marginBottom: 12, fontSize: '2rem', textAlign: 'center' }}>Something went wrong</h2>
+      <p style={{ color: '#1a2341', fontFamily: 'Lora, serif', fontSize: '1.15rem', textAlign: 'center', marginBottom: 24 }}>
+        We encountered an unexpected error. Please refresh the page to try again.
+      </p>
+      <button
+        style={{
+          background: '#de6b2f',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 8,
+          padding: '10px 32px',
+          fontFamily: 'Lora, serif',
+          fontWeight: 700,
+          fontSize: '1.1rem',
+          cursor: 'pointer',
+          boxShadow: '0 2px 8px rgba(222,107,47,0.08)'
+        }}
+        onClick={() => window.location.reload()}
+      >
+        Refresh Page
+      </button>
     </div>
   );
 }

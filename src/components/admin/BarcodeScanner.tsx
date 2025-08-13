@@ -127,11 +127,18 @@ export default function BarcodeScanner() {
       return;
     }
 
+    if (!registrationId || typeof registrationId !== 'string' || registrationId.trim().length === 0) {
+      setMessage('Invalid registration ID');
+      setMessageType('error');
+      return;
+    }
+
     try {
       setMessage('Processing...');
       setMessageType('info');
       
-      const registration = eventRegistrations.find(reg => reg.registrationId === registrationId.trim());
+      const trimmedId = registrationId.trim();
+      const registration = eventRegistrations.find(reg => reg.registrationId === trimmedId);
       
       if (!registration) {
         setMessage('❌ Unauthorized: User not registered or approved for this event');
@@ -149,24 +156,28 @@ export default function BarcodeScanner() {
         return;
       }
       
-      const response = await markAttendance(registrationId.trim());
+      const response = await markAttendance(trimmedId);
       
       // Update local state immediately
       setEventRegistrations(prev => 
         prev.map(reg => 
-          reg.registrationId === registrationId.trim() 
-            ? { ...reg, attended: true, attendedAt: new Date() }
+          reg.registrationId === trimmedId 
+            ? { ...reg, attended: true, attendedAt: response.attendedAt || new Date() }
             : reg
         )
       );
       
-      setMessage(`✓ ${response.message}`);
+      setMessage(`✓ ${response.message || 'Attendance marked successfully'}`);
       setMessageType('success');
       setManualCode('');
       playSound('success');
     } catch (error: any) {
-      setMessage(error.message || 'Failed to mark attendance');
+      console.error('Mark attendance error:', error);
+      const errorMessage = error.message || 'Failed to mark attendance';
+      setMessage(`❌ ${errorMessage}`);
       setMessageType('error');
+      setManualCode('');
+      playSound('error');
     }
   };
 

@@ -7,7 +7,7 @@ interface FilterProps {
   filterOptions: Array<{
     key: string;
     label: string;
-    type: 'text' | 'select' | 'date';
+    type: 'text' | 'select' | 'date' | 'datetime';
     options?: Array<{ value: string; label: string }>;
   }>;
 }
@@ -53,12 +53,12 @@ export default function AdminFilters({ filters, onFilterChange, filterOptions }:
               <TextField
                 fullWidth
                 size="small"
-                type={option.type}
+                type={option.type === 'datetime' ? 'datetime-local' : option.type}
                 label={option.label}
                 value={filters[option.key] || ''}
                 onChange={(e) => onFilterChange(option.key, e.target.value)}
                 sx={{ minWidth: '200px' }}
-                InputLabelProps={option.type === 'date' ? { shrink: true } : undefined}
+                InputLabelProps={option.type === 'date' || option.type === 'datetime' ? { shrink: true } : undefined}
               />
             )}
           </Grid>

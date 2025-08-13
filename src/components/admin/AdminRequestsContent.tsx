@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { getUsers, approveUser, rejectUser, bulkApproveUsers, bulkRejectUsers } from '../../services/api.ts';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, IconButton, TablePagination } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, IconButton, TablePagination, Select, MenuItem, FormControl, InputLabel, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import AdminFilters from './AdminFilters.tsx';
 import axios from 'axios';
@@ -15,6 +15,9 @@ export default function AdminRequestsContent() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [totalCount, setTotalCount] = useState(0);
+  const [userTemplate, setUserTemplate] = useState('');
+  const [templateDialog, setTemplateDialog] = useState<{ open: boolean; template: string }>({ open: false, template: '' });
+  const [editableTemplate, setEditableTemplate] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -115,6 +118,34 @@ export default function AdminRequestsContent() {
     }
   }
 
+  const getUserWhatsAppMessage = (user: any) => {
+    const template = userTemplate || `*Sivoham* {name} garu🙏,\n\n*Congratulations!*\n*Your registration has been {status}.*\n\nYou can now access our courses and programs.\n\n*Jai Gurudev* 🙏`;
+    
+    return template
+      .replace(/{name}/g, `${user.firstName} ${user.lastName}`)
+      .replace(/{status}/g, user.isSelected ? 'approved' : 'processed');
+  };
+
+  const handleEditUserTemplate = () => {
+    const template = userTemplate || `*Sivoham* {name} garu🙏,\n\n*Congratulations!*\n*Your registration has been {status}.*\n\nYou can now access our courses and programs.\n\n*Jai Gurudev* 🙏`;
+    setEditableTemplate(template);
+    setTemplateDialog({ open: true, template });
+  };
+
+  const handleSaveUserTemplate = () => {
+    setUserTemplate(editableTemplate);
+    setTemplateDialog({ open: false, template: '' });
+    localStorage.setItem('userRegistrationTemplate', editableTemplate);
+    alert('Template saved successfully!');
+  };
+
+  useEffect(() => {
+    const savedTemplate = localStorage.getItem('userRegistrationTemplate');
+    if (savedTemplate) {
+      setUserTemplate(savedTemplate);
+    }
+  }, []);
+
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
       const name = `${user.firstName} ${user.lastName}`.toLowerCase();
@@ -161,6 +192,24 @@ export default function AdminRequestsContent() {
         onFilterChange={handleFilterChange}
         filterOptions={filterOptions}
       />
+
+      <Paper sx={{ p: 2, mb: 3, bgcolor: '#fff7f0' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Lora, serif', color: '#de6b2f' }}>
+          WhatsApp Message Template
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Button 
+            variant="outlined" 
+            onClick={handleEditUserTemplate}
+            sx={{ borderColor: '#de6b2f', color: '#de6b2f' }}
+          >
+            Edit User Template
+          </Button>
+        </Box>
+        <Typography variant="body2" sx={{ mt: 1, color: '#666', fontStyle: 'italic' }}>
+          Available placeholders: {'{name}'}, {'{status}'}
+        </Typography>
+      </Paper>
 
       {selectedUsers.length > 0 && (
         <Box sx={{ mb: 2, p: 2, bgcolor: '#fff3e0', borderRadius: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
@@ -220,7 +269,7 @@ export default function AdminRequestsContent() {
                   {user.mobile && (
                     <IconButton
                       onClick={() => {
-                        const message = `*Sivoham* ${user.firstName} ${user.lastName} garu🙏,\n\n*Congratulations!*\n*Your registration has been ${user.isSelected ? 'approved' : 'processed'}.*\n\nYou can now access our courses and programs.\n\n*Jai Gurudev* 🙏`;
+                        const message = getUserWhatsAppMessage(user);
                         const whatsappUrl = `https://web.whatsapp.com/send?phone=${user.mobile}&text=${encodeURIComponent(message)}`;
                         window.open(whatsappUrl, '_blank');
                       }}
@@ -287,6 +336,41 @@ export default function AdminRequestsContent() {
           sx={{ borderTop: '1px solid #e0e0e0' }}
         />
       </TableContainer>
+
+      <Dialog open={templateDialog.open} onClose={() => setTemplateDialog({ open: false, template: '' })} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontFamily: 'Lora, serif', color: '#de6b2f' }}>
+          Edit User Registration WhatsApp Template
+        </DialogTitle>
+        <DialogContent sx={{ py: 3 }}>
+          <Typography variant="body2" sx={{ mb: 2, color: '#666' }}>
+            Available placeholders: {'{name}'}, {'{status}'}
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={6}
+            value={editableTemplate}
+            onChange={(e) => setEditableTemplate(e.target.value)}
+            placeholder="Enter your WhatsApp message template..."
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <Button 
+            onClick={() => setTemplateDialog({ open: false, template: '' })}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveUserTemplate}
+            variant="contained"
+            sx={{ background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)' }}
+          >
+            Save Template
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

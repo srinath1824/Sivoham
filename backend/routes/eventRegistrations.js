@@ -99,6 +99,24 @@ router.get('/', auth, async (req, res) => {
     // Filter by eventType = limited
     allRegs = allRegs.filter(reg => reg.eventId && reg.eventId.eventType === 'limited');
     
+    // Apply filters from query parameters
+    if (req.query.event) {
+      allRegs = allRegs.filter(reg => reg.eventId && reg.eventId._id.toString() === req.query.event);
+    }
+    if (req.query.name) {
+      allRegs = allRegs.filter(reg => reg.fullName && reg.fullName.toLowerCase().includes(req.query.name.toLowerCase()));
+    }
+    if (req.query.mobile) {
+      allRegs = allRegs.filter(reg => reg.mobile && reg.mobile.toLowerCase().includes(req.query.mobile.toLowerCase()));
+    }
+    if (req.query.status) {
+      allRegs = allRegs.filter(reg => reg.status === req.query.status);
+    }
+    if (req.query.whatsappSent) {
+      const whatsappFilter = req.query.whatsappSent === 'true';
+      allRegs = allRegs.filter(reg => Boolean(reg.whatsappSent) === whatsappFilter);
+    }
+    
     const total = allRegs.length;
     const paginatedRegs = allRegs.slice(skip, skip + limit);
     
@@ -135,6 +153,32 @@ router.get('/all', auth, async (req, res) => {
         return { ...regObj, user: { _id: user._id, fullName: user.firstName + ' ' + user.lastName, mobile: user.mobile } };
       })
     );
+    
+    // Apply filters from query parameters
+    if (req.query.event) {
+      allRegs = allRegs.filter(reg => reg.eventId && reg.eventId._id.toString() === req.query.event);
+    }
+    if (req.query.name) {
+      allRegs = allRegs.filter(reg => reg.fullName && reg.fullName.toLowerCase().includes(req.query.name.toLowerCase()));
+    }
+    if (req.query.mobile) {
+      allRegs = allRegs.filter(reg => reg.mobile && reg.mobile.toLowerCase().includes(req.query.mobile.toLowerCase()));
+    }
+    if (req.query.status) {
+      allRegs = allRegs.filter(reg => reg.status === req.query.status);
+    }
+    if (req.query.attended) {
+      const attendedFilter = req.query.attended === 'yes';
+      allRegs = allRegs.filter(reg => Boolean(reg.attended) === attendedFilter);
+    }
+    if (req.query.attendedBefore) {
+      const beforeTime = new Date(req.query.attendedBefore);
+      allRegs = allRegs.filter(reg => reg.attended && reg.attendedAt && new Date(reg.attendedAt) <= beforeTime);
+    }
+    if (req.query.attendedAfter) {
+      const afterTime = new Date(req.query.attendedAfter);
+      allRegs = allRegs.filter(reg => reg.attended && reg.attendedAt && new Date(reg.attendedAt) >= afterTime);
+    }
     
     const total = allRegs.length;
     const paginatedRegs = allRegs.slice(skip, skip + limit);
@@ -208,13 +252,24 @@ router.put('/:id/reject', auth, async (req, res) => {
 // PUT /api/event-registrations/:id/attend (mark attendance)
 router.put('/:id/attend', auth, async (req, res) => {
   try {
-    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+    if (!req.user || !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
     
-    const user = await User.findOne({ 'events.eventsRegistered.registrationId': req.params.id });
-    if (!user || !user.events) return res.status(404).json({ error: 'Registration not found' });
+    const registrationId = req.params.id;
+    if (!registrationId || typeof registrationId !== 'string' || registrationId.trim().length === 0) {
+      return res.status(400).json({ error: 'Valid registration ID is required' });
+    }
     
-    const reg = (user.events.eventsRegistered || []).find(r => r.registrationId === req.params.id);
-    if (!reg) return res.status(404).json({ error: 'Registration not found' });
+    const user = await User.findOne({ 'events.eventsRegistered.registrationId': registrationId.trim() });
+    if (!user || !user.events || !user.events.eventsRegistered) {
+      return res.status(404).json({ error: 'Registration not found' });
+    }
+    
+    const reg = user.events.eventsRegistered.find(r => r.registrationId === registrationId.trim());
+    if (!reg) {
+      return res.status(404).json({ error: 'Registration not found' });
+    }
     
     if (reg.status !== 'approved') {
       return res.status(400).json({ error: 'Registration must be approved first' });
@@ -224,9 +279,10 @@ router.put('/:id/attend', auth, async (req, res) => {
       return res.status(400).json({ error: 'Attendance already marked' });
     }
     
+    const now = new Date();
     reg.attended = true;
-    reg.attendedAt = new Date();
-    reg.updatedAt = new Date();
+    reg.attendedAt = now;
+    reg.updatedAt = now;
     
     // Also add to eventsAttended if not already there
     if (!user.events.eventsAttended) user.events.eventsAttended = [];
@@ -237,14 +293,15 @@ router.put('/:id/attend', auth, async (req, res) => {
         registeredId: reg.registrationId,
         eventName: reg.eventName,
         eventDate: reg.eventDate,
-        dateAttended: new Date()
+        dateAttended: now
       });
     }
     
     await user.save();
-    res.json({ success: true, message: `Attendance marked for ${reg.fullName}` });
+    res.json({ success: true, message: `Attendance marked for ${reg.fullName}`, attendedAt: now });
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Failed to mark attendance' });
+    console.error('Mark attendance error:', err);
+    res.status(500).json({ error: 'Failed to mark attendance' });
   }
 });
 
@@ -330,6 +387,62 @@ router.put('/:id/toggle-whatsapp', auth, async (req, res) => {
   } catch (err) {
     console.error('Toggle error:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/event-registrations/export (admin exports all filtered data to Excel)
+router.get('/export', auth, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  try {
+    const users = await User.find({ 'events.eventsRegistered.0': { $exists: true } }).populate('events.eventsRegistered.eventId');
+    
+    // Flatten all registrations with user info
+    let allRegs = users.flatMap(user =>
+      (user.events.eventsRegistered || []).map(reg => {
+        const regObj = reg.toObject ? reg.toObject() : reg;
+        // Ensure all required fields are present
+        const requiredFields = ['fullName', 'mobile', 'gender', 'age', 'address', 'sksLevel', 'sksMiracle', 'forWhom', 'profession', 'otherDetails', 'registeredId', 'registrationId', 'status'];
+        requiredFields.forEach(f => {
+          if (regObj[f] === undefined || regObj[f] === null || (typeof regObj[f] === 'string' && regObj[f].trim() === '')) {
+            regObj[f] = '-';
+          }
+        });
+        // Ensure attended and whatsappSent fields are properly set
+        regObj.attended = Boolean(regObj.attended);
+        regObj.whatsappSent = Boolean(regObj.whatsappSent);
+        return { ...regObj, user: { _id: user._id, fullName: user.firstName + ' ' + user.lastName, mobile: user.mobile } };
+      })
+    );
+    
+    // Apply filters from query parameters (same as /all endpoint)
+    if (req.query.event) {
+      allRegs = allRegs.filter(reg => reg.eventId && reg.eventId._id.toString() === req.query.event);
+    }
+    if (req.query.name) {
+      allRegs = allRegs.filter(reg => reg.fullName && reg.fullName.toLowerCase().includes(req.query.name.toLowerCase()));
+    }
+    if (req.query.mobile) {
+      allRegs = allRegs.filter(reg => reg.mobile && reg.mobile.toLowerCase().includes(req.query.mobile.toLowerCase()));
+    }
+    if (req.query.status) {
+      allRegs = allRegs.filter(reg => reg.status === req.query.status);
+    }
+    if (req.query.attended) {
+      const attendedFilter = req.query.attended === 'yes';
+      allRegs = allRegs.filter(reg => Boolean(reg.attended) === attendedFilter);
+    }
+    if (req.query.attendedBefore) {
+      const beforeTime = new Date(req.query.attendedBefore);
+      allRegs = allRegs.filter(reg => reg.attended && reg.attendedAt && new Date(reg.attendedAt) <= beforeTime);
+    }
+    if (req.query.attendedAfter) {
+      const afterTime = new Date(req.query.attendedAfter);
+      allRegs = allRegs.filter(reg => reg.attended && reg.attendedAt && new Date(reg.attendedAt) >= afterTime);
+    }
+    
+    res.json({ registrations: allRegs, total: allRegs.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to export registrations' });
   }
 });
 

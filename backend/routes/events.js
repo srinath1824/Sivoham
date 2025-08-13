@@ -50,10 +50,10 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
-    const { name, date, description, venue, location, eventType } = req.body;
+    const { name, date, description, venue, location, eventType, messageTemplate } = req.body;
     const event = await Event.findByIdAndUpdate(
       req.params.id,
-      { name, date, description, venue, location, eventType },
+      { name, date, description, venue, location, eventType, messageTemplate },
       { new: true }
     );
     if (!event) return res.status(404).json({ error: 'Event not found' });

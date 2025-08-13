@@ -16,7 +16,7 @@ export default function EventsManagement() {
 
   useEffect(() => {
     fetchEvents();
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, filters]);
 
   async function fetchEvents() {
     setLoading(true);
@@ -82,10 +82,21 @@ export default function EventsManagement() {
     }
   }
 
-  const filteredEvents = events;
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+      const eventName = event.name?.toLowerCase() || '';
+      const description = event.description?.toLowerCase() || '';
+      const eventDate = event.date ? new Date(event.date).toISOString().split('T')[0] : '';
+      
+      return (!filters.name || event._id === filters.name) &&
+             (!filters.description || description.includes(filters.description.toLowerCase())) &&
+             (!filters.date || eventDate === filters.date);
+    });
+  }, [events, filters]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+    setPage(0); // Reset to first page when filtering
   };
 
   const filterOptions = [

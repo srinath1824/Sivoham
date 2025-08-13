@@ -6,6 +6,17 @@ const connectDB = require('./db');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Global error handler to prevent crashes
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 // Feature flag for stateless mode (set via environment variable or config)
 const USE_STATELESS_MODE = process.env.USE_STATELESS_MODE === 'true';
 
@@ -24,8 +35,40 @@ if (process.env.ENABLE_NEWRELIC === 'true') {
  * - Use /api/health for load balancer health checks.
  */
 
-app.use(cors());
-app.use(express.json());
+// Security middleware
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://your-domain.com'] 
+    : true,
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Rate limiting middleware (basic)
+const requestCounts = new Map();
+app.use((req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000; // 15 minutes
+  const maxRequests = 1000; // per window
+  
+  if (!requestCounts.has(ip)) {
+    requestCounts.set(ip, { count: 1, resetTime: now + windowMs });
+  } else {
+    const record = requestCounts.get(ip);
+    if (now > record.resetTime) {
+      record.count = 1;
+      record.resetTime = now + windowMs;
+    } else {
+      record.count++;
+      if (record.count > maxRequests) {
+        return res.status(429).json({ error: 'Too many requests' });
+      }
+    }
+  }
+  next();
+});
 
 app.get('/', (req, res) => {
   res.send({ status: 'Backend server running!' });
@@ -44,8 +87,33 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/progress', require('./routes/progress'));
 app.use('/api/event-registrations', require('./routes/eventRegistrations'));
 
+// Global error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Global error handler:', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
+  
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+      console.log('Process terminated');
+    });
+  });
+}).catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 }); 

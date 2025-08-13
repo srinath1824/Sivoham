@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, TablePagination, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, TablePagination, Select, MenuItem, FormControl, InputLabel, TextField } from '@mui/material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import AdminFilters from './AdminFilters.tsx';
 import QRCode from 'qrcode';
@@ -18,6 +18,9 @@ export default function EventRegistrationsApproval() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [totalCount, setTotalCount] = useState(0);
+  const [selectedEventTemplate, setSelectedEventTemplate] = useState('');
+  const [templateDialog, setTemplateDialog] = useState<{ open: boolean; eventId: string; template: string }>({ open: false, eventId: '', template: '' });
+  const [editableTemplate, setEditableTemplate] = useState('');
 
   const token = localStorage.getItem('token');
   const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -141,6 +144,43 @@ export default function EventRegistrationsApproval() {
     }
   };
 
+  const getWhatsAppMessage = (reg: any) => {
+    const eventDate = reg.eventId?.date ? new Date(reg.eventId.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '') : 'TBD';
+    const selectedEvent = events.find(e => e._id === selectedEventTemplate);
+    const template = selectedEvent?.messageTemplate || `*Sivoham* {name} garu🙏,\n\n*Congratulations!*\n*Your are selected for "{eventName}" on {eventDate}.*\n\Your Entry ID: *{registrationId}*\nRegistrations will start by 8am\n\n{qrCode}*Jai Gurudev* 🙏`;
+    
+    return template
+      .replace(/{name}/g, reg.fullName || 'there')
+      .replace(/{eventName}/g, reg.eventId?.name || 'Event')
+      .replace(/{eventDate}/g, eventDate)
+      .replace(/{registrationId}/g, reg.registrationId)
+      .replace(/{qrCode}/g, reg.status === 'approved' ? '📱 Show this QR code at the event for entry.\n\n' : '');
+  };
+
+  const handleEditTemplate = (eventId: string) => {
+    const event = events.find(e => e._id === eventId);
+    const template = event?.messageTemplate || `*Sivoham* {name} garu🙏,\n\n*Congratulations!*\n*Your are selected for "{eventName}" on {eventDate}.*\n\Your Entry ID: *{registrationId}*\nRegistrations will start by 8am\n\n{qrCode}*Jai Gurudev* 🙏`;
+    setEditableTemplate(template);
+    setTemplateDialog({ open: true, eventId, template });
+  };
+
+  const handleSaveTemplate = async () => {
+    try {
+      await axios.put(`/api/events/${templateDialog.eventId}`, {
+        messageTemplate: editableTemplate
+      }, config);
+      setEvents(prev => prev.map(e => 
+        e._id === templateDialog.eventId 
+          ? { ...e, messageTemplate: editableTemplate }
+          : e
+      ));
+      setTemplateDialog({ open: false, eventId: '', template: '' });
+      alert('Template saved successfully!');
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to save template');
+    }
+  };
+
   async function handleToggleWhatsappSent(regId: string) {
     try {
       const response = await axios.put(`/api/event-registrations/${regId}/toggle-whatsapp`, {}, config);
@@ -161,6 +201,7 @@ export default function EventRegistrationsApproval() {
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+    setPage(0); // Reset to first page when filtering
   };
 
   const filterOptions = [
@@ -193,6 +234,41 @@ export default function EventRegistrationsApproval() {
         onFilterChange={handleFilterChange}
         filterOptions={filterOptions}
       />
+
+      <Paper sx={{ p: 2, mb: 3, bgcolor: '#fff7f0' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Lora, serif', color: '#de6b2f' }}>
+          WhatsApp Message Template
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>Select Event Template</InputLabel>
+            <Select
+              value={selectedEventTemplate}
+              onChange={(e) => setSelectedEventTemplate(e.target.value)}
+              label="Select Event Template"
+            >
+              <MenuItem value="">Default Template</MenuItem>
+              {events.map((event) => (
+                <MenuItem key={event._id} value={event._id}>
+                  {event.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {selectedEventTemplate && (
+            <Button 
+              variant="outlined" 
+              onClick={() => handleEditTemplate(selectedEventTemplate)}
+              sx={{ borderColor: '#de6b2f', color: '#de6b2f' }}
+            >
+              Edit Template
+            </Button>
+          )}
+        </Box>
+        <Typography variant="body2" sx={{ mt: 1, color: '#666', fontStyle: 'italic' }}>
+          Available placeholders: {'{name}'}, {'{eventName}'}, {'{eventDate}'}, {'{registrationId}'}, {'{qrCode}'}
+        </Typography>
+      </Paper>
 
 
 
@@ -242,8 +318,7 @@ export default function EventRegistrationsApproval() {
                   {reg.mobile && (
                     <IconButton
                       onClick={() => {
-                        const eventDate = reg.eventId?.date ? new Date(reg.eventId.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '') : 'TBD';
-                        const message = `*Sivoham* ${reg.fullName || 'there'} garu🙏,\n\n*Congratulations!*\n*Your are selected for "${reg.eventId?.name || 'Event'}" on ${eventDate}.*\n\Your Entry ID: *${reg.registrationId}*\nRegistrations will start by 8am\n\n${reg.status === 'approved' ? `📱 Show this QR code at the event for entry.\n\n` : ''}*Jai Gurudev* 🙏`;
+                        const message = getWhatsAppMessage(reg);
                         const whatsappUrl = `https://web.whatsapp.com/send?phone=${reg.mobile}&text=${encodeURIComponent(message)}`;
                         window.open(whatsappUrl, '_blank');
                       }}
@@ -392,6 +467,41 @@ export default function EventRegistrationsApproval() {
             sx={{ background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)' }}
           >
             Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={templateDialog.open} onClose={() => setTemplateDialog({ open: false, eventId: '', template: '' })} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontFamily: 'Lora, serif', color: '#de6b2f' }}>
+          Edit WhatsApp Message Template
+        </DialogTitle>
+        <DialogContent sx={{ py: 3 }}>
+          <Typography variant="body2" sx={{ mb: 2, color: '#666' }}>
+            Available placeholders: {'{name}'}, {'{eventName}'}, {'{eventDate}'}, {'{registrationId}'}, {'{qrCode}'}
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={8}
+            value={editableTemplate}
+            onChange={(e) => setEditableTemplate(e.target.value)}
+            placeholder="Enter your WhatsApp message template..."
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <Button 
+            onClick={() => setTemplateDialog({ open: false, eventId: '', template: '' })}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveTemplate}
+            variant="contained"
+            sx={{ background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)' }}
+          >
+            Save Template
           </Button>
         </DialogActions>
       </Dialog>
