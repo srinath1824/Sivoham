@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Button, Checkbox, TablePagination } from '@mui/material';
 import { Download } from '@mui/icons-material';
@@ -8,7 +8,7 @@ import AdminFilters from './AdminFilters.tsx';
 export default function EventUsersTab() {
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [editingRegId, setEditingRegId] = useState<string | null>(null);
   const [selectedRegs, setSelectedRegs] = useState<string[]>([]);
@@ -33,7 +33,7 @@ export default function EventUsersTab() {
       setRegistrations(res.data.registrations || res.data);
       setTotalCount(res.data.total || res.data.length);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch data');
+      console.error('Failed to fetch data:', err);
     } finally {
       setLoading(false);
     }

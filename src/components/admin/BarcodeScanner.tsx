@@ -337,7 +337,7 @@ export default function BarcodeScanner() {
           PaperProps={{
             sx: { minHeight: '500px' }
           }}
-          onEntered={() => {}}
+
         >
           <DialogTitle>QR Code Scanner</DialogTitle>
           <DialogContent>

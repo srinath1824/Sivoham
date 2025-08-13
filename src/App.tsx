@@ -1,17 +1,8 @@
 /* global window, document, localStorage, fetch, console, Blob, URL, alert */
-import React, { useState, useRef, Suspense, lazy, useEffect } from 'react';
+import React, { useState, Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.tsx';
 import Footer from './components/Footer.tsx';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Alert from '@mui/material/Alert';
-import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
 import Home from './pages/Home.tsx';
 import LoginDialog from './components/LoginDialog.tsx';
 import Join from './pages/Join.tsx';
@@ -41,8 +32,7 @@ interface UserProfile {
 
 const Courses = lazy(() => import('./pages/Courses.tsx'));
 const Progress = lazy(() => import('./pages/Progress.tsx'));
-const Programs = lazy(() => import('./pages/Programs.tsx'));
-const Gallery = lazy(() => import('./pages/Gallery.tsx'));
+
 const Events = lazy(() => import('./pages/Events.tsx'));
 
 /**
@@ -56,7 +46,6 @@ function App({ navigate }) {
   const [loadingUser, setLoadingUser] = useState(true);
   const location = useLocation();
 
-  // Always fetch latest user profile on mount or route change if logged in
   useEffect(() => {
     async function fetchUserProfileSecure() {
       const token = localStorage.getItem('token');
@@ -80,35 +69,6 @@ function App({ navigate }) {
     fetchUserProfileSecure();
   }, [location.pathname]);
 
-  // Also run on first mount
-  useEffect(() => {
-    async function fetchUserProfileSecure() {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setUser(null);
-        setLoadingUser(false);
-        return;
-      }
-      try {
-        const profile = await getUserProfile();
-        setUser(profile);
-        localStorage.setItem('user', JSON.stringify(profile));
-      } catch (err) {
-        setUser(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-      }
-      setLoadingUser(false);
-    }
-    setLoadingUser(true);
-    fetchUserProfileSecure();
-  }, []);
-
-  /**
-   * Handles successful login and stores user in localStorage.
-   * @param {any} u - The user object.
-   * @param {string} token - The JWT token.
-   */
   async function handleLogin(u, token) {
     if (token) localStorage.setItem('token', token);
     setLoginOpen(false);

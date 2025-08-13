@@ -16,9 +16,7 @@ export default function AdminFilters({ filters, onFilterChange, filterOptions }:
   return (
     <Box sx={{ mb: 3, p: 2, bgcolor: '#fff7f0', borderRadius: 2 }}>
       <Grid container spacing={2}>
-        {filterOptions.map((option) => {
-          const isYesNoFilter = option.key === 'admin' || option.key === 'selected';
-          return (
+        {filterOptions.map((option) => (
           <Grid item xs={12} sm={6} md={3} key={option.key}>
             {option.type === 'select' ? (
               <TextField
@@ -62,8 +60,7 @@ export default function AdminFilters({ filters, onFilterChange, filterOptions }:
               />
             )}
           </Grid>
-          );
-        })}
+        ))}
       </Grid>
     </Box>
   );
