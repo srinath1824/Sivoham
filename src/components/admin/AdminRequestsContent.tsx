@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { getUsers, approveUser, rejectUser, bulkApproveUsers, bulkRejectUsers } from '../../services/api.ts';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, IconButton, TablePagination } from '@mui/material';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import AdminFilters from './AdminFilters.tsx';
+import axios from 'axios';
 
 export default function AdminRequestsContent() {
   const [users, setUsers] = useState<any[]>([]);
@@ -10,17 +12,26 @@ export default function AdminRequestsContent() {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [page, rowsPerPage]);
 
   async function fetchUsers() {
     setLoading(true);
     setError('');
     try {
-      const data = await getUsers();
-      setUsers(data);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/admin/users?page=${page + 1}&limit=${rowsPerPage}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch users');
+      const data = await res.json();
+      setUsers(data.users || data);
+      setTotalCount(data.total || data.length);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch users');
     } finally {
@@ -89,6 +100,21 @@ export default function AdminRequestsContent() {
     );
   };
 
+  async function handleToggleWhatsappSent(userId: string) {
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const response = await axios.put(`/api/admin/users/${userId}/toggle-whatsapp`, {}, config);
+      setUsers(prev => prev.map(user => 
+        user._id === userId 
+          ? { ...user, whatsappSent: response.data.whatsappSent }
+          : user
+      ));
+    } catch (err: any) {
+      alert(err.response?.data?.error || err.message || 'Failed to update WhatsApp status');
+    }
+  }
+
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
       const name = `${user.firstName} ${user.lastName}`.toLowerCase();
@@ -99,7 +125,8 @@ export default function AdminRequestsContent() {
       return (!filters.name || name.includes(filters.name.toLowerCase())) &&
              (!filters.mobile || mobile.includes(filters.mobile.toLowerCase())) &&
              (!filters.email || email.includes(filters.email.toLowerCase())) &&
-             (!filters.status || status === filters.status);
+             (!filters.status || status === filters.status) &&
+             (!filters.whatsappSent || (filters.whatsappSent === 'true' ? user.whatsappSent : !user.whatsappSent));
     });
   }, [users, filters]);
 
@@ -114,13 +141,17 @@ export default function AdminRequestsContent() {
     { key: 'status', label: 'Status', type: 'select' as const, options: [
       { value: 'pending', label: 'Pending' },
       { value: 'approved', label: 'Approved' }
+    ]},
+    { key: 'whatsappSent', label: 'WhatsApp Sent', type: 'select' as const, options: [
+      { value: 'true', label: 'Yes' },
+      { value: 'false', label: 'No' }
     ]}
   ];
 
   return (
     <Box sx={{ p: { xs: 1, md: 3 } }}>
       <Typography variant="h4" sx={{ mb: 2, fontFamily: 'Lora, serif', color: '#de6b2f', fontWeight: 700 }}>
-        User Registration Requests
+        User Registration Requests ({totalCount})
       </Typography>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -164,6 +195,8 @@ export default function AdminRequestsContent() {
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Mobile</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Email</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>WhatsApp</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Message Sent</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -183,6 +216,34 @@ export default function AdminRequestsContent() {
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{user.mobile}</TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{user.email}</TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: user.isSelected ? '#2e7d32' : '#ed6c02', fontWeight: 600 }}>{user.isSelected ? 'Approved' : 'Pending'}</TableCell>
+                <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', textAlign: 'center' }}>
+                  {user.mobile && (
+                    <IconButton
+                      onClick={() => {
+                        const message = `*Sivoham* ${user.firstName} ${user.lastName} garu🙏,\n\n*Congratulations!*\n*Your registration has been ${user.isSelected ? 'approved' : 'processed'}.*\n\nYou can now access our courses and programs.\n\n*Jai Gurudev* 🙏`;
+                        const whatsappUrl = `https://web.whatsapp.com/send?phone=${user.mobile}&text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, '_blank');
+                      }}
+                      sx={{ 
+                        color: '#25D366',
+                        '&:hover': { 
+                          backgroundColor: 'rgba(37, 211, 102, 0.1)' 
+                        }
+                      }}
+                      title="Send WhatsApp message"
+                    >
+                      <WhatsAppIcon />
+                    </IconButton>
+                  )}
+                </TableCell>
+                <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', textAlign: 'center' }}>
+                  <Checkbox
+                    checked={user.whatsappSent || false}
+                    onChange={() => handleToggleWhatsappSent(user._id)}
+                    sx={{ color: '#25D366' }}
+                    title="Mark as WhatsApp message sent"
+                  />
+                </TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
                   {!user.isAdmin && (
                     <>
@@ -212,6 +273,19 @@ export default function AdminRequestsContent() {
             ))}
           </TableBody>
         </Table>
+        <TablePagination
+          component="div"
+          count={totalCount}
+          page={page}
+          onPageChange={(_, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value));
+            setPage(0);
+          }}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          sx={{ borderTop: '1px solid #e0e0e0' }}
+        />
       </TableContainer>
     </Box>
   );

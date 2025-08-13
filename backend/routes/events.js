@@ -7,8 +7,18 @@ const router = express.Router();
 // Get all events (public)
 router.get('/', async (req, res) => {
   try {
-    const events = await Event.find().sort({ date: 1 });
-    res.json(events);
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+    
+    if (page && limit) {
+      const skip = (page - 1) * limit;
+      const total = await Event.countDocuments({});
+      const events = await Event.find().sort({ date: 1 }).skip(skip).limit(limit);
+      res.json({ events, total });
+    } else {
+      const events = await Event.find().sort({ date: 1 });
+      res.json(events);
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

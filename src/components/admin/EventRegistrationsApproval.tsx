@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, TablePagination, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import AdminFilters from './AdminFilters.tsx';
 import QRCode from 'qrcode';
 
@@ -14,14 +15,20 @@ export default function EventRegistrationsApproval() {
   const [barcodeDialog, setBarcodeDialog] = useState<{ open: boolean; regId: string; qrCode: string }>({ open: false, regId: '', qrCode: '' });
   const [detailsDialog, setDetailsDialog] = useState<{ open: boolean; registration: any | null }>({ open: false, registration: null });
   const [events, setEvents] = useState<any[]>([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [totalCount, setTotalCount] = useState(0);
 
   const token = localStorage.getItem('token');
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {
     fetchEvents();
-    fetchRegistrations();
   }, []);
+
+  useEffect(() => {
+    fetchRegistrations();
+  }, [page, rowsPerPage, filters]);
 
   async function fetchEvents() {
     try {
@@ -36,8 +43,14 @@ export default function EventRegistrationsApproval() {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get('/api/event-registrations', config);
-      setRegistrations(res.data.filter((reg: any) => reg.eventId && reg.eventId.eventType === 'limited'));
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: rowsPerPage.toString(),
+        ...filters
+      });
+      const res = await axios.get(`/api/event-registrations?${params}`, config);
+      setRegistrations(res.data.registrations || res.data);
+      setTotalCount(res.data.total || res.data.length);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch event registrations');
     } finally {
@@ -98,7 +111,7 @@ export default function EventRegistrationsApproval() {
   };
 
   const handleSelectAll = () => {
-    const pendingRegs = filteredRegistrations.filter(reg => reg.status === 'pending');
+    const pendingRegs = registrations.filter(reg => reg.status === 'pending');
     setSelectedRegs(
       selectedRegs.length === pendingRegs.length 
         ? [] 
@@ -115,19 +128,20 @@ export default function EventRegistrationsApproval() {
     }
   };
 
-  const filteredRegistrations = useMemo(() => {
-    return registrations.filter(reg => {
-      const eventId = reg.eventId?._id || '';
-      const userName = reg.fullName?.toLowerCase() || '';
-      const mobile = reg.mobile?.toLowerCase() || '';
-      const status = reg.status?.toLowerCase() || '';
-      
-      return (!filters.event || eventId === filters.event) &&
-             (!filters.name || userName.includes(filters.name.toLowerCase())) &&
-             (!filters.mobile || mobile.includes(filters.mobile.toLowerCase())) &&
-             (!filters.status || status === filters.status);
-    });
-  }, [registrations, filters]);
+  async function handleToggleWhatsappSent(regId: string) {
+    try {
+      const response = await axios.put(`/api/event-registrations/${regId}/toggle-whatsapp`, {}, config);
+      setRegistrations(prev => prev.map(reg => 
+        reg.registrationId === regId 
+          ? { ...reg, whatsappSent: response.data.whatsappSent }
+          : reg
+      ));
+    } catch (err: any) {
+      alert(err.response?.data?.error || err.message || 'Failed to update WhatsApp status');
+    }
+  }
+
+
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -143,13 +157,17 @@ export default function EventRegistrationsApproval() {
       { value: 'pending', label: 'Pending' },
       { value: 'approved', label: 'Approved' },
       { value: 'rejected', label: 'Rejected' }
+    ]},
+    { key: 'whatsappSent', label: 'WhatsApp Sent', type: 'select' as const, options: [
+      { value: 'true', label: 'Yes' },
+      { value: 'false', label: 'No' }
     ]}
   ];
 
   return (
     <Box sx={{ p: { xs: 1, md: 3 } }}>
       <Typography variant="h4" sx={{ mb: 2, fontFamily: 'Lora, serif', color: '#b45309', fontWeight: 700 }}>
-        Event Registrations (Approval Required)
+        Event Registrations (Approval Required) ({totalCount})
       </Typography>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -160,65 +178,37 @@ export default function EventRegistrationsApproval() {
         filterOptions={filterOptions}
       />
 
-      {selectedRegs.length > 0 && (
-        <Box sx={{ mb: 2, p: 2, bgcolor: '#fff3e0', borderRadius: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <Typography variant="body2" sx={{ alignSelf: 'center', fontWeight: 600 }}>
-            {selectedRegs.length} registrations selected
-          </Typography>
-          <Button size="small" color="success" variant="contained" onClick={handleBulkApprove}>
-            Bulk Approve
-          </Button>
-          <Button size="small" color="error" variant="contained" onClick={handleBulkReject}>
-            Bulk Reject
-          </Button>
-          <Button size="small" variant="outlined" onClick={() => setSelectedRegs([])}>
-            Clear Selection
-          </Button>
-        </Box>
-      )}
 
-      <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', background: '#fff', mb: 4 }}>
+
+      <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', background: '#fff', mb: 2 }}>
         <Table>
           <TableHead>
             <TableRow sx={{ background: '#fff7f0' }}>
-              <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem', width: 50 }}>
-                <Checkbox 
-                  checked={selectedRegs.length > 0 && selectedRegs.length === filteredRegistrations.filter(r => r.status === 'pending').length}
-                  indeterminate={selectedRegs.length > 0 && selectedRegs.length < filteredRegistrations.filter(r => r.status === 'pending').length}
-                  onChange={handleSelectAll}
-                  sx={{ color: '#de6b2f' }}
-                />
-              </TableCell>
+
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Event</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Registrant</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Mobile</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>WhatsApp</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Message Sent</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Details</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredRegistrations.length === 0 && (
-              <TableRow><TableCell colSpan={7} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>No registrations found.</TableCell></TableRow>
+            {registrations.length === 0 && (
+              <TableRow><TableCell colSpan={8} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>No registrations found.</TableCell></TableRow>
             )}
-            {filteredRegistrations.map((reg, idx) => (
+            {registrations.map((reg, idx) => (
               <TableRow key={reg._id} hover sx={{ background: idx % 2 === 0 ? '#fff' : '#f9f4ee', '&:hover': { background: '#fff3e0' } }}>
-                <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
-                  {reg.status === 'pending' && (
-                    <Checkbox 
-                      checked={selectedRegs.includes(reg.registrationId)}
-                      onChange={() => handleSelectReg(reg.registrationId)}
-                      sx={{ color: '#de6b2f' }}
-                    />
-                  )}
-                </TableCell>
+
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333', fontWeight: 600 }}>{reg.eventId?.name}</TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{reg.fullName || '-'}</TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{reg.mobile || '-'}</TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <Typography sx={{ color: reg.status === 'approved' ? '#2e7d32' : reg.status === 'rejected' ? '#d32f2f' : '#ed6c02', fontWeight: 600, fontSize: '0.9rem' }}>
-                      {reg.status}
+                      {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
                     </Typography>
                     {reg.status === 'approved' && (
                       <Button 
@@ -231,6 +221,35 @@ export default function EventRegistrationsApproval() {
                       </Button>
                     )}
                   </Box>
+                </TableCell>
+                <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', textAlign: 'center' }}>
+                  {reg.mobile && (
+                    <IconButton
+                      onClick={() => {
+                        const eventDate = reg.eventId?.date ? new Date(reg.eventId.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '') : 'TBD';
+                        const message = `*Sivoham* ${reg.fullName || 'there'} garu🙏,\n\n*Congratulations!*\n*Your are selected for "${reg.eventId?.name || 'Event'}" on ${eventDate}.*\n\Your Entry ID: *${reg.registrationId}*\nRegistrations will start by 8am\n\n${reg.status === 'approved' ? `🎫 Your QR Code: ${reg.registrationId}\n📱 Show this QR code at the event for entry.\n\n` : ''}*Jai Gurudev* 🙏`;
+                        const whatsappUrl = `https://web.whatsapp.com/send?phone=${reg.mobile}&text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, '_blank');
+                      }}
+                      sx={{ 
+                        color: '#25D366',
+                        '&:hover': { 
+                          backgroundColor: 'rgba(37, 211, 102, 0.1)' 
+                        }
+                      }}
+                      title="Send WhatsApp message"
+                    >
+                      <WhatsAppIcon />
+                    </IconButton>
+                  )}
+                </TableCell>
+                <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', textAlign: 'center' }}>
+                  <Checkbox
+                    checked={reg.whatsappSent || false}
+                    onChange={() => handleToggleWhatsappSent(reg.registrationId)}
+                    sx={{ color: '#25D366' }}
+                    title="Mark as WhatsApp message sent"
+                  />
                 </TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
                   <Button 
@@ -277,6 +296,20 @@ export default function EventRegistrationsApproval() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <TablePagination
+        component="div"
+        count={totalCount}
+        page={page}
+        onPageChange={(_, newPage) => setPage(newPage)}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(parseInt(e.target.value, 10));
+          setPage(0);
+        }}
+        rowsPerPageOptions={[5, 10, 25, 50]}
+        sx={{ mb: 4 }}
+      />
 
       <Dialog open={barcodeDialog.open} onClose={() => setBarcodeDialog({ open: false, regId: '', qrCode: '' })} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ textAlign: 'center', fontFamily: 'Lora, serif', color: '#de6b2f' }}>

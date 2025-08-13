@@ -211,8 +211,9 @@ export default function BarcodeScanner() {
 
   async function fetchEventRegistrations() {
     try {
-      const res = await axios.get('/api/event-registrations', config);
-      const filtered = res.data.filter((reg: any) => 
+      const res = await axios.get('/api/event-registrations/all?limit=1000', config);
+      const registrations = res.data.registrations || res.data;
+      const filtered = registrations.filter((reg: any) => 
         reg.eventId?._id === selectedEvent && reg.status === 'approved'
       );
       setEventRegistrations(filtered);

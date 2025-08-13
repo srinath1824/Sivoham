@@ -16,6 +16,7 @@ const EventRegistrationSubSchema = new mongoose.Schema({
   sksMiracle: { type: String, required: true },
   otherDetails: { type: String },
   forWhom: { type: String, required: true },
+  whatsappSent: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 }, { _id: false });
@@ -38,6 +39,7 @@ const UserSchema = new mongoose.Schema({
   address: { type: String },
   email: { type: String, sparse: true, lowercase: true, trim: true, match: /.+\@.+\..+/ },
   levelCompleted: { type: String },
+  whatsappSent: { type: Boolean, default: false },
   courses: CoursesSchema,
   events: EventsSchema,
 }, { timestamps: true });

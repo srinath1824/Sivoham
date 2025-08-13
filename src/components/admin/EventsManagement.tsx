@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, MenuItem } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, MenuItem, TablePagination } from '@mui/material';
 import AdminFilters from './AdminFilters.tsx';
 
 export default function EventsManagement() {
@@ -10,16 +10,20 @@ export default function EventsManagement() {
   const [editEvent, setEditEvent] = useState<any>(null);
   const [editForm, setEditForm] = useState({ name: '', date: '', description: '', venue: '', location: '', eventType: 'unlimited' });
   const [isAddMode, setIsAddMode] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     fetchEvents();
-  }, []);
+  }, [page, rowsPerPage]);
 
   async function fetchEvents() {
     setLoading(true);
     try {
-      const res = await axios.get('/api/events');
-      setEvents(res.data);
+      const res = await axios.get(`/api/events?page=${page + 1}&limit=${rowsPerPage}`);
+      setEvents(res.data.events || res.data);
+      setTotalCount(res.data.total || res.data.length);
     } finally {
       setLoading(false);
     }
@@ -78,17 +82,7 @@ export default function EventsManagement() {
     }
   }
 
-  const filteredEvents = useMemo(() => {
-    return events.filter(event => {
-      const eventId = event._id || '';
-      const description = event.description?.toLowerCase() || '';
-      const eventDate = event.date ? new Date(event.date).toISOString().split('T')[0] : '';
-      
-      return (!filters.name || eventId === filters.name) &&
-             (!filters.description || description.includes(filters.description.toLowerCase())) &&
-             (!filters.date || eventDate === filters.date);
-    });
-  }, [events, filters]);
+  const filteredEvents = events;
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -105,7 +99,7 @@ export default function EventsManagement() {
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 2, fontFamily: 'Lora, serif', color: '#b45309', fontWeight: 700 }}>
-        Events Management
+        Events Management ({totalCount})
       </Typography>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -155,6 +149,19 @@ export default function EventsManagement() {
             ))}
           </TableBody>
         </Table>
+        <TablePagination
+          component="div"
+          count={totalCount}
+          page={page}
+          onPageChange={(_, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value));
+            setPage(0);
+          }}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          sx={{ borderTop: '1px solid #e0e0e0' }}
+        />
       </TableContainer>
 
       <Dialog open={!!editEvent} onClose={() => { setEditEvent(null); setIsAddMode(false); }} maxWidth="sm" fullWidth>

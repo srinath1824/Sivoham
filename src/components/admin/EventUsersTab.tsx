@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Button, Checkbox } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Button, Checkbox, TablePagination } from '@mui/material';
 import AdminFilters from './AdminFilters.tsx';
 
 export default function EventUsersTab() {
@@ -11,16 +11,20 @@ export default function EventUsersTab() {
   const [editingRegId, setEditingRegId] = useState<string | null>(null);
   const [selectedRegs, setSelectedRegs] = useState<string[]>([]);
   const [events, setEvents] = useState<any[]>([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [totalCount, setTotalCount] = useState(0);
 
   const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
 
   async function fetchData() {
     setLoading(true);
     try {
-      const res = await axios.get('/api/event-registrations', { 
+      const res = await axios.get(`/api/event-registrations/all?page=${page + 1}&limit=${rowsPerPage}`, { 
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } 
       });
-      setRegistrations(res.data);
+      setRegistrations(res.data.registrations || res.data);
+      setTotalCount(res.data.total || res.data.length);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch data');
     } finally {
@@ -31,7 +35,7 @@ export default function EventUsersTab() {
   useEffect(() => {
     fetchEvents();
     fetchData();
-  }, []);
+  }, [page, rowsPerPage]);
 
   async function fetchEvents() {
     try {
@@ -102,21 +106,7 @@ export default function EventUsersTab() {
     );
   };
 
-  const filteredRegistrations = useMemo(() => {
-    return registrations.filter(reg => {
-      const eventId = reg.eventId?._id || '';
-      const userName = reg.fullName?.toLowerCase() || '';
-      const mobile = reg.mobile?.toLowerCase() || '';
-      const status = reg.status?.toLowerCase() || '';
-      const attended = reg.attended ? 'yes' : 'no';
-      
-      return (!filters.event || eventId === filters.event) &&
-             (!filters.name || userName.includes(filters.name.toLowerCase())) &&
-             (!filters.mobile || mobile.includes(filters.mobile.toLowerCase())) &&
-             (!filters.status || status === filters.status) &&
-             (!filters.attended || attended === filters.attended);
-    });
-  }, [registrations, filters]);
+  const filteredRegistrations = registrations;
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -142,7 +132,7 @@ export default function EventUsersTab() {
   return (
     <Box sx={{ p: { xs: 1, md: 3 } }}>
       <Typography variant="h4" sx={{ mb: 2, fontFamily: 'Lora, serif', color: '#b45309', fontWeight: 700 }}>
-        Event Users
+        Event Users ({totalCount})
       </Typography>
       
       {loading ? (
@@ -207,7 +197,7 @@ export default function EventUsersTab() {
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333', fontWeight: 600 }}>{reg.eventId?.name}</TableCell>
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{reg.fullName}</TableCell>
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{reg.mobile}</TableCell>
-                  <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: reg.status === 'approved' ? '#2e7d32' : reg.status === 'rejected' ? '#d32f2f' : '#ed6c02', fontWeight: 600 }}>{reg.status}</TableCell>
+                  <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: reg.status === 'approved' ? '#2e7d32' : reg.status === 'rejected' ? '#d32f2f' : '#ed6c02', fontWeight: 600 }}>{reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}</TableCell>
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: reg.attended ? '#2e7d32' : '#666', fontWeight: 600 }}>
                     {reg.attended ? '✓ Attended' : 'Not Attended'}
                   </TableCell>
@@ -236,6 +226,19 @@ export default function EventUsersTab() {
               ))}
             </TableBody>
           </Table>
+          <TablePagination
+            component="div"
+            count={totalCount}
+            page={page}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPage(parseInt(e.target.value));
+              setPage(0);
+            }}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            sx={{ borderTop: '1px solid #e0e0e0' }}
+          />
         </TableContainer>
         </>
       )}

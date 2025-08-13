@@ -53,6 +53,7 @@ router.post('/', async (req, res) => {
       sksMiracle,
       otherDetails: otherDetails && otherDetails.trim() !== '' ? otherDetails : null,
       forWhom,
+      whatsappSent: false,
       createdAt: now,
       updatedAt: now
     };
@@ -67,13 +68,18 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/event-registrations (admin views all registrations)
+// GET /api/event-registrations (admin views limited event registrations for approval)
 router.get('/', auth, async (req, res) => {
   if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+    
     const users = await User.find({ 'events.eventsRegistered.0': { $exists: true } }).populate('events.eventsRegistered.eventId');
+    
     // Flatten all registrations with user info
-    const allRegs = users.flatMap(user =>
+    let allRegs = users.flatMap(user =>
       (user.events.eventsRegistered || []).map(reg => {
         const regObj = reg.toObject ? reg.toObject() : reg;
         // Ensure all required fields are present
@@ -83,12 +89,57 @@ router.get('/', auth, async (req, res) => {
             regObj[f] = '-';
           }
         });
-        // Ensure attended field is properly set
+        // Ensure attended and whatsappSent fields are properly set
         regObj.attended = Boolean(regObj.attended);
+        regObj.whatsappSent = Boolean(regObj.whatsappSent);
         return { ...regObj, user: { _id: user._id, fullName: user.firstName + ' ' + user.lastName, mobile: user.mobile } };
       })
     );
-    res.json(allRegs);
+    
+    // Filter by eventType = limited
+    allRegs = allRegs.filter(reg => reg.eventId && reg.eventId.eventType === 'limited');
+    
+    const total = allRegs.length;
+    const paginatedRegs = allRegs.slice(skip, skip + limit);
+    
+    res.json({ registrations: paginatedRegs, total });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to fetch all registrations' });
+  }
+});
+
+// GET /api/event-registrations/all (admin views all event registrations)
+router.get('/all', auth, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+    
+    const users = await User.find({ 'events.eventsRegistered.0': { $exists: true } }).populate('events.eventsRegistered.eventId');
+    
+    // Flatten all registrations with user info
+    let allRegs = users.flatMap(user =>
+      (user.events.eventsRegistered || []).map(reg => {
+        const regObj = reg.toObject ? reg.toObject() : reg;
+        // Ensure all required fields are present
+        const requiredFields = ['fullName', 'mobile', 'gender', 'age', 'address', 'sksLevel', 'sksMiracle', 'forWhom', 'profession', 'otherDetails', 'registeredId', 'registrationId', 'status'];
+        requiredFields.forEach(f => {
+          if (regObj[f] === undefined || regObj[f] === null || (typeof regObj[f] === 'string' && regObj[f].trim() === '')) {
+            regObj[f] = '-';
+          }
+        });
+        // Ensure attended and whatsappSent fields are properly set
+        regObj.attended = Boolean(regObj.attended);
+        regObj.whatsappSent = Boolean(regObj.whatsappSent);
+        return { ...regObj, user: { _id: user._id, fullName: user.firstName + ' ' + user.lastName, mobile: user.mobile } };
+      })
+    );
+    
+    const total = allRegs.length;
+    const paginatedRegs = allRegs.slice(skip, skip + limit);
+    
+    res.json({ registrations: paginatedRegs, total });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Failed to fetch all registrations' });
   }
@@ -110,8 +161,9 @@ router.get('/user/:mobile', async (req, res) => {
           regObj[f] = '-';
         }
       });
-      // Ensure attended field is properly set
+      // Ensure attended and whatsappSent fields are properly set
       regObj.attended = Boolean(regObj.attended);
+      regObj.whatsappSent = regObj.whatsappSent !== undefined ? Boolean(regObj.whatsappSent) : false;
       return regObj;
     });
     res.json(regs);
@@ -245,6 +297,59 @@ router.post('/bulk-reject', auth, async (req, res) => {
     res.json({ message: `${modifiedCount} registrations rejected`, modifiedCount });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/event-registrations/:id/toggle-whatsapp (toggle WhatsApp sent status)
+router.put('/:id/toggle-whatsapp', auth, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+    
+    // Get current value and toggle
+    const user = await User.findOne({ 'events.eventsRegistered.registrationId': req.params.id });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    const reg = user.events.eventsRegistered.find(r => r.registrationId === req.params.id);
+    if (!reg) return res.status(404).json({ error: 'Registration not found' });
+    
+    const newValue = !Boolean(reg.whatsappSent);
+    
+    // Simple positional update
+    const result = await User.updateOne(
+      { 
+        _id: user._id,
+        'events.eventsRegistered.registrationId': req.params.id 
+      },
+      { 
+        $set: { 'events.eventsRegistered.$.whatsappSent': newValue }
+      }
+    );
+    
+    console.log(`Toggle result for ${req.params.id}:`, result);
+    res.json({ success: true, whatsappSent: newValue });
+  } catch (err) {
+    console.error('Toggle error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Check what's actually in database
+router.get('/check-whatsapp/:id', auth, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+  try {
+    const user = await User.findOne({ 'events.eventsRegistered.registrationId': req.params.id });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    const reg = user.events.eventsRegistered.find(r => r.registrationId === req.params.id);
+    if (!reg) return res.status(404).json({ error: 'Registration not found' });
+    
+    res.json({ 
+      registrationId: req.params.id,
+      whatsappSent: reg.whatsappSent,
+      fullRegistration: reg
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
