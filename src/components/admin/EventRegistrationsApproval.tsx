@@ -128,14 +128,30 @@ export default function EventRegistrationsApproval() {
     }
   };
 
+  const handleCopyImage = async () => {
+    try {
+      const response = await fetch(barcodeDialog.qrCode);
+      const blob = await response.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      alert('QR code copied to clipboard!');
+    } catch (err) {
+      alert('Failed to copy image to clipboard');
+    }
+  };
+
   async function handleToggleWhatsappSent(regId: string) {
     try {
       const response = await axios.put(`/api/event-registrations/${regId}/toggle-whatsapp`, {}, config);
+      // Update local state immediately
       setRegistrations(prev => prev.map(reg => 
         reg.registrationId === regId 
           ? { ...reg, whatsappSent: response.data.whatsappSent }
           : reg
       ));
+      // Also refresh data from server to ensure consistency
+      fetchRegistrations();
     } catch (err: any) {
       alert(err.response?.data?.error || err.message || 'Failed to update WhatsApp status');
     }
@@ -227,7 +243,7 @@ export default function EventRegistrationsApproval() {
                     <IconButton
                       onClick={() => {
                         const eventDate = reg.eventId?.date ? new Date(reg.eventId.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '') : 'TBD';
-                        const message = `*Sivoham* ${reg.fullName || 'there'} garu🙏,\n\n*Congratulations!*\n*Your are selected for "${reg.eventId?.name || 'Event'}" on ${eventDate}.*\n\Your Entry ID: *${reg.registrationId}*\nRegistrations will start by 8am\n\n${reg.status === 'approved' ? `🎫 Your QR Code: ${reg.registrationId}\n📱 Show this QR code at the event for entry.\n\n` : ''}*Jai Gurudev* 🙏`;
+                        const message = `*Sivoham* ${reg.fullName || 'there'} garu🙏,\n\n*Congratulations!*\n*Your are selected for "${reg.eventId?.name || 'Event'}" on ${eventDate}.*\n\Your Entry ID: *${reg.registrationId}*\nRegistrations will start by 8am\n\n${reg.status === 'approved' ? `📱 Show this QR code at the event for entry.\n\n` : ''}*Jai Gurudev* 🙏`;
                         const whatsappUrl = `https://web.whatsapp.com/send?phone=${reg.mobile}&text=${encodeURIComponent(message)}`;
                         window.open(whatsappUrl, '_blank');
                       }}
@@ -329,7 +345,14 @@ export default function EventRegistrationsApproval() {
             </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ justifyContent: 'center', pb: 3 }}>
+        <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
+          <Button 
+            onClick={handleCopyImage}
+            variant="outlined"
+            sx={{ borderColor: '#de6b2f', color: '#de6b2f' }}
+          >
+            Copy Image
+          </Button>
           <Button 
             onClick={() => setBarcodeDialog({ open: false, regId: '', qrCode: '' })}
             variant="contained"
