@@ -6,6 +6,7 @@ import EventIcon from '@mui/icons-material/Event';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import GroupIcon from '@mui/icons-material/Group';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 
 interface AdminSidebarProps {
   tab: number;
@@ -20,6 +21,7 @@ const tabList = [
   { label: 'Event Registrations', icon: <AssignmentIcon /> },
   { label: 'Event Users', icon: <GroupIcon /> },
   { label: 'Users', icon: <PersonSearchIcon /> },
+  { label: 'Barcode Scanner', icon: <QrCodeScannerIcon /> },
 ];
 
 export default function AdminSidebar({ tab, setTab, drawerOpen, setDrawerOpen }: AdminSidebarProps) {
@@ -53,13 +55,19 @@ export default function AdminSidebar({ tab, setTab, drawerOpen, setDrawerOpen }:
         </Box>
       </Drawer>
 
-      <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', mb: 2 }}>
-        <IconButton onClick={() => setDrawerOpen(true)} sx={{ mr: 1 }}>
+      <Box sx={{ 
+        display: { xs: 'flex', md: 'none' }, 
+        alignItems: 'center', 
+        mb: 2,
+        position: 'sticky',
+        top: 0,
+        bgcolor: 'white',
+        zIndex: 10,
+        py: 1
+      }}>
+        <IconButton onClick={() => setDrawerOpen(true)}>
           <MenuIcon />
         </IconButton>
-        <Typography variant="h5" sx={{ fontFamily: 'Lora, serif', color: '#b45309', fontWeight: 700 }}>
-          {tabList[tab].label}
-        </Typography>
       </Box>
     </>
   );

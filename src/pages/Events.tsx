@@ -3,7 +3,7 @@ import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, T
 import { PAST_EVENTS, UPCOMING_EVENTS } from '../config/constants.ts';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
-import Barcode from 'react-barcode';
+import QRCode from 'qrcode';
 
 interface EventType {
   _id: string;
@@ -22,6 +22,7 @@ interface RegistrationType {
   registrationId: string;
   registeredId?: string;
   status: 'pending' | 'approved' | 'rejected';
+  attended?: boolean;
   fullName: string;
   mobile: string;
   gender: string;
@@ -67,6 +68,7 @@ export default function Events() {
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registeredEvents, setRegisteredEvents] = useState<RegistrationType[]>([]);
   const [tab, setTab] = useState(0);
+  const [barcodeDialog, setBarcodeDialog] = useState<{ open: boolean; regId: string; qrCode: string }>({ open: false, regId: '', qrCode: '' });
 
   const SKS_LEVELS = [
     'Level-5.1', 'Level-5', 'Level-4', 'Level-3', 'Level-2', 'Level-1', 'Not done any Level'
@@ -191,6 +193,15 @@ export default function Events() {
     }
   };
 
+  const handleShowBarcode = async (regId: string) => {
+    try {
+      const qrCodeDataURL = await QRCode.toDataURL(regId);
+      setBarcodeDialog({ open: true, regId, qrCode: qrCodeDataURL });
+    } catch (err) {
+      alert('Failed to generate barcode');
+    }
+  };
+
   const now = new Date();
   const upcomingEvents = events.filter(e => new Date(e.date) >= now);
   const pastEvents = events.filter(e => new Date(e.date) < now);
@@ -235,7 +246,7 @@ export default function Events() {
                     </TableHead>
                     <TableBody>
                       {upcomingEvents.length === 0 && (
-                        <TableRow><TableCell colSpan={4}>No upcoming events at this time.</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={6}>No upcoming events at this time.</TableCell></TableRow>
                       )}
                       {upcomingEvents.map((event: EventType) => (
                         <TableRow key={event._id}>
@@ -297,7 +308,7 @@ export default function Events() {
                     </TableHead>
                     <TableBody>
                       {pastEvents.length === 0 && (
-                        <TableRow><TableCell colSpan={3}>No past events to display.</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={5}>No past events to display.</TableCell></TableRow>
                       )}
                       {pastEvents.map((event: EventType) => (
                         <TableRow key={event._id}>
@@ -333,6 +344,7 @@ export default function Events() {
                       <TableCell>Location</TableCell>
                       <TableCell>Registration ID</TableCell>
                       <TableCell>Status</TableCell>
+                      <TableCell>Attendance</TableCell>
                       <TableCell>Details</TableCell>
                     </TableRow>
                   </TableHead>
@@ -343,16 +355,28 @@ export default function Events() {
                         <TableCell>{reg.eventId?.date ? formatDateTime(reg.eventId.date) : '-'}</TableCell>
                         <TableCell>{reg.eventId?.venue}</TableCell>
                         <TableCell>{reg.eventId?.location}</TableCell>
-                        <TableCell style={{ fontWeight: 700 }}>
-                          {reg.registrationId || reg.registeredId || '-'}
-                          {reg.registrationId && (
-                            <div style={{ marginTop: 8 }}>
-                              <Barcode value={reg.registrationId} width={1.5} height={40} fontSize={12} displayValue={false} />
-                            </div>
-                          )}
+                        <TableCell>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>
+                              {reg.registrationId || reg.registeredId || '-'}
+                            </Typography>
+                            {reg.status === 'approved' && reg.registrationId && (
+                              <Button 
+                                size="small" 
+                                variant="outlined" 
+                                onClick={() => handleShowBarcode(reg.registrationId)}
+                                sx={{ fontSize: '0.7rem', py: 0.5, alignSelf: 'flex-start' }}
+                              >
+                                Show QR Code
+                              </Button>
+                            )}
+                          </Box>
                         </TableCell>
                         <TableCell style={{ color: reg.status === 'approved' ? 'green' : reg.status === 'pending' ? '#b45309' : 'red', fontWeight: 700 }}>
                           {reg.status === 'approved' ? 'Approved' : reg.status === 'pending' ? 'Pending' : 'Rejected'}
+                        </TableCell>
+                        <TableCell style={{ color: reg.attended ? 'green' : '#888', fontWeight: 700 }}>
+                          {reg.attended ? '✓ Attended' : 'Not Attended'}
                         </TableCell>
                         <TableCell>
                           <div style={{ fontSize: 13 }}>
@@ -408,6 +432,35 @@ export default function Events() {
           <DialogActions>
             <Button onClick={handleRegisterClose} color="inherit">Cancel</Button>
             <Button onClick={handleRegisterSubmit} color="primary" variant="contained" disabled={registerLoading}>{registerLoading ? 'Registering...' : 'Submit'}</Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={barcodeDialog.open} onClose={() => setBarcodeDialog({ open: false, regId: '', qrCode: '' })} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ textAlign: 'center', fontFamily: 'Lora, serif', color: '#de6b2f' }}>
+            Registration QR Code
+          </DialogTitle>
+          <DialogContent sx={{ textAlign: 'center', py: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Inter, sans-serif' }}>
+              Registration ID: {barcodeDialog.regId}
+            </Typography>
+            {barcodeDialog.qrCode && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <img 
+                  src={barcodeDialog.qrCode} 
+                  alt="Registration QR Code" 
+                  style={{ maxWidth: '200px', height: 'auto' }}
+                />
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: 'center', pb: 3 }}>
+            <Button 
+              onClick={() => setBarcodeDialog({ open: false, regId: '', qrCode: '' })}
+              variant="contained"
+              sx={{ background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)' }}
+            >
+              Close
+            </Button>
           </DialogActions>
         </Dialog>
       </Box>

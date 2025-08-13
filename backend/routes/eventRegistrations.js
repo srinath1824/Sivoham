@@ -83,6 +83,8 @@ router.get('/', auth, async (req, res) => {
             regObj[f] = '-';
           }
         });
+        // Ensure attended field is properly set
+        regObj.attended = Boolean(regObj.attended);
         return { ...regObj, user: { _id: user._id, fullName: user.firstName + ' ' + user.lastName, mobile: user.mobile } };
       })
     );
@@ -108,6 +110,8 @@ router.get('/user/:mobile', async (req, res) => {
           regObj[f] = '-';
         }
       });
+      // Ensure attended field is properly set
+      regObj.attended = Boolean(regObj.attended);
       return regObj;
     });
     res.json(regs);
@@ -146,6 +150,101 @@ router.put('/:id/reject', auth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Failed to reject registration' });
+  }
+});
+
+// PUT /api/event-registrations/:id/attend (mark attendance)
+router.put('/:id/attend', auth, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+    
+    const user = await User.findOne({ 'events.eventsRegistered.registrationId': req.params.id });
+    if (!user || !user.events) return res.status(404).json({ error: 'Registration not found' });
+    
+    const reg = (user.events.eventsRegistered || []).find(r => r.registrationId === req.params.id);
+    if (!reg) return res.status(404).json({ error: 'Registration not found' });
+    
+    if (reg.status !== 'approved') {
+      return res.status(400).json({ error: 'Registration must be approved first' });
+    }
+    
+    if (reg.attended) {
+      return res.status(400).json({ error: 'Attendance already marked' });
+    }
+    
+    reg.attended = true;
+    reg.attendedAt = new Date();
+    reg.updatedAt = new Date();
+    
+    // Also add to eventsAttended if not already there
+    if (!user.events.eventsAttended) user.events.eventsAttended = [];
+    const alreadyAttended = user.events.eventsAttended.find(a => a.eventId?.toString() === reg.eventId?.toString());
+    if (!alreadyAttended) {
+      user.events.eventsAttended.push({
+        eventId: reg.eventId,
+        registeredId: reg.registrationId,
+        eventName: reg.eventName,
+        eventDate: reg.eventDate,
+        dateAttended: new Date()
+      });
+    }
+    
+    await user.save();
+    res.json({ success: true, message: `Attendance marked for ${reg.fullName}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to mark attendance' });
+  }
+});
+
+// POST /api/event-registrations/bulk-approve (admin bulk approves)
+router.post('/bulk-approve', auth, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+    const { registrationIds } = req.body;
+    if (!registrationIds || !Array.isArray(registrationIds)) return res.status(400).json({ error: 'Invalid registrationIds' });
+    
+    let modifiedCount = 0;
+    for (const regId of registrationIds) {
+      const user = await User.findOne({ 'events.eventsRegistered.registrationId': regId });
+      if (user && user.events) {
+        const reg = user.events.eventsRegistered.find(r => r.registrationId === regId);
+        if (reg) {
+          reg.status = 'approved';
+          reg.updatedAt = new Date();
+          await user.save();
+          modifiedCount++;
+        }
+      }
+    }
+    res.json({ message: `${modifiedCount} registrations approved`, modifiedCount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/event-registrations/bulk-reject (admin bulk rejects)
+router.post('/bulk-reject', auth, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+    const { registrationIds } = req.body;
+    if (!registrationIds || !Array.isArray(registrationIds)) return res.status(400).json({ error: 'Invalid registrationIds' });
+    
+    let modifiedCount = 0;
+    for (const regId of registrationIds) {
+      const user = await User.findOne({ 'events.eventsRegistered.registrationId': regId });
+      if (user && user.events) {
+        const reg = user.events.eventsRegistered.find(r => r.registrationId === regId);
+        if (reg) {
+          reg.status = 'rejected';
+          reg.updatedAt = new Date();
+          await user.save();
+          modifiedCount++;
+        }
+      }
+    }
+    res.json({ message: `${modifiedCount} registrations rejected`, modifiedCount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

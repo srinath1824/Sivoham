@@ -5,28 +5,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 const Programs = lazy(() => import('./Programs.tsx'));
 const Gallery = lazy(() => import('./Gallery.tsx'));
+const Testimonials = lazy(() => import('./Testimonials.tsx'));
 
 const images = [
   '/logo192.png',
   '/logo512.png',
-];
-
-const testimonials = [
-  {
-    name: 'Ramananda Swami',
-    desc: 'Sanyasi, Badrinath',
-    text: 'I spent many years in Himalayas and travelled across India in pursuit of Moksha. Only a self-experienced person can guide others to the path of liberation. Guru Sree Jeeveswara Yogi is one of the rarest Advaitha Shaktipath Gurus. I feel so blessed and fortunate to have found him.'
-  },
-  {
-    name: 'Mrs. Rajya Lakshmi',
-    desc: 'Retd. Teacher',
-    text: 'Parama Pujya Sree Jeeveswara Yogi is none the less than Dakshinamurthy himself disguised as a common man incarnated to uplift ignorant people like us with boundless Compassion. He is Shiva himself.'
-  },
-  {
-    name: 'Mr. Suresh Kalimahanthi',
-    desc: 'IT, USA',
-    text: 'I have read a lot of books on Kundalini and many Upanishads. However, there is only a mention of how to do and what to do in them. Sree Jeeveswara Yogi is imparting that practical knowledge whole heartedly without expecting anything from us.'
-  },
 ];
 
 function getRandomInt(min: number, max: number) {
@@ -110,7 +93,10 @@ export default function Home() {
   const { t } = useTranslation();
   const location = useLocation();
   const [showBadge, setShowBadge] = useState(true);
+
   const registered = location.state && typeof location.state.registered === 'boolean' ? location.state.registered : null;
+  
+
   useEffect(() => {
     if (registered !== null) {
       setShowBadge(true);
@@ -187,17 +173,9 @@ export default function Home() {
       </section>
       {/* Testimonials Section */}
       <section id="testimonials" style={{ background: '#ffff', padding: '2rem' }} >
-        <h2 className="section-heading">{t('home.testimonials')}</h2>
-        <div className="testimonials-grid">
-          {testimonials.map((tst, i) => (
-            <div key={i} className="testimonial-card">
-              <div className="testimonial-avatar">{tst.name[0]}</div>
-              <h3 style={{fontWeight: 600, color: 'var(--primary)', marginBottom: 4}}>{t('home.testimonialsList.' + i + '.name')}</h3>
-              <span style={{fontSize: '0.95rem', color: 'var(--text-light)', marginBottom: 8}}>{t('home.testimonialsList.' + i + '.desc')}</span>
-              <p style={{marginTop: 8}}>{t('home.testimonialsList.' + i + '.text')}</p>
-            </div>
-          ))}
-        </div>
+        <Suspense fallback={<SectionLoader />}>
+          <Testimonials />
+        </Suspense>
       </section>
     </main>
   );

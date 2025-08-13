@@ -6,6 +6,7 @@ import EventsManagement from '../components/admin/EventsManagement.tsx';
 import EventRegistrationsApproval from '../components/admin/EventRegistrationsApproval.tsx';
 import EventUsersTab from '../components/admin/EventUsersTab.tsx';
 import AdminUsersTab from '../components/admin/AdminUsersTab.tsx';
+import BarcodeScanner from '../components/admin/BarcodeScanner.tsx';
 
 export default function AdminRequests() {
   const [tab, setTab] = useState(0);
@@ -26,6 +27,7 @@ export default function AdminRequests() {
         {tab === 2 && <EventRegistrationsApproval />}
         {tab === 3 && <EventUsersTab />}
         {tab === 4 && <AdminUsersTab />}
+        {tab === 5 && <BarcodeScanner />}
       </Box>
     </Box>
   );

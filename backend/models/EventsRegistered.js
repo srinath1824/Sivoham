@@ -19,7 +19,9 @@ const EventsRegisteredSchema = new mongoose.Schema({
   profession: { type: String },
   otherDetails: { type: String },
   registrationId: { type: String },
-  status: { type: String }
+  status: { type: String },
+  attended: { type: Boolean, default: false },
+  attendedAt: { type: Date }
 }, { _id: false });
 
 module.exports = EventsRegisteredSchema; 

@@ -76,7 +76,6 @@ export default function Programs() {
               fontSize: { xs: '1.1rem', md: '1.15rem' },
               color: '#222',
               mb: 4,
-              maxWidth: 520,
             }}
           >
             Explore our unique, step-by-step Kundalini Sadhana programs, designed for all

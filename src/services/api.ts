@@ -181,3 +181,44 @@ export async function getUserProfile() {
   if (!res.ok) throw new Error('Failed to fetch user profile');
   return res.json();
 }
+
+/**
+ * Mark attendance for event registration
+ * @param registrationId
+ */
+export async function markAttendance(registrationId: string) {
+  const res = await fetch(`${API_URL}/event-registrations/${registrationId}/attend`, {
+    method: 'PUT',
+    headers: buildHeaders({ 'Content-Type': 'application/json' }),
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Failed to mark attendance');
+  return res.json();
+}
+
+/**
+ * Bulk approve multiple users
+ * @param userIds
+ */
+export async function bulkApproveUsers(userIds: string[]) {
+  const res = await fetch(`${API_URL}/admin/users/bulk-approve`, {
+    method: 'POST',
+    headers: buildHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ userIds }),
+  });
+  if (!res.ok) throw new Error('Failed to bulk approve users');
+  return res.json();
+}
+
+/**
+ * Bulk reject multiple users
+ * @param userIds
+ */
+export async function bulkRejectUsers(userIds: string[]) {
+  const res = await fetch(`${API_URL}/admin/users/bulk-reject`, {
+    method: 'POST',
+    headers: buildHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ userIds }),
+  });
+  if (!res.ok) throw new Error('Failed to bulk reject users');
+  return res.json();
+}

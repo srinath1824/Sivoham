@@ -21,23 +21,31 @@ router.post('/', auth, async (req, res) => {
 
 // Update event (admin only)
 router.put('/:id', auth, async (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
-  const { name, date, description, venue, location, eventType } = req.body;
-  const event = await Event.findByIdAndUpdate(
-    req.params.id,
-    { name, date, description, venue, location, eventType },
-    { new: true }
-  );
-  if (!event) return res.status(404).json({ error: 'Event not found' });
-  res.json(event);
+  try {
+    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+    const { name, date, description, venue, location, eventType } = req.body;
+    const event = await Event.findByIdAndUpdate(
+      req.params.id,
+      { name, date, description, venue, location, eventType },
+      { new: true }
+    );
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    res.json(event);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Delete event (admin only)
 router.delete('/:id', auth, async (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
-  const event = await Event.findByIdAndDelete(req.params.id);
-  if (!event) return res.status(404).json({ error: 'Event not found' });
-  res.json({ success: true });
+  try {
+    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+    const event = await Event.findByIdAndDelete(req.params.id);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    res.json({ success: true, message: 'Event deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 module.exports = router; 
