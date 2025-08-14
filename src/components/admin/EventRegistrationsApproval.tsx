@@ -1,18 +1,19 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, TablePagination, Select, MenuItem, FormControl, InputLabel, TextField } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, TablePagination, Select, MenuItem, FormControl, InputLabel, TextField, Snackbar } from '@mui/material';
+import { Person, Phone, Wc, Cake, Work, LocationOn, School, Star, Info, Group, Badge, Event } from '@mui/icons-material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import AdminFilters from './AdminFilters.tsx';
 import QRCode from 'qrcode';
 
 export default function EventRegistrationsApproval() {
   const [registrations, setRegistrations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [editingRegId, setEditingRegId] = useState<string | null>(null);
   const [selectedRegs, setSelectedRegs] = useState<string[]>([]);
-  const [barcodeDialog, setBarcodeDialog] = useState<{ open: boolean; regId: string; qrCode: string }>({ open: false, regId: '', qrCode: '' });
+  const [barcodeDialog, setBarcodeDialog] = useState<{ open: boolean; regId: string; qrCode: string; registration?: any }>({ open: false, regId: '', qrCode: '' });
   const [detailsDialog, setDetailsDialog] = useState<{ open: boolean; registration: any | null }>({ open: false, registration: null });
   const [events, setEvents] = useState<any[]>([]);
   const [page, setPage] = useState(0);
@@ -21,6 +22,7 @@ export default function EventRegistrationsApproval() {
   const [selectedEventTemplate, setSelectedEventTemplate] = useState('');
   const [templateDialog, setTemplateDialog] = useState<{ open: boolean; eventId: string; template: string }>({ open: false, eventId: '', template: '' });
   const [editableTemplate, setEditableTemplate] = useState('');
+  const [showToast, setShowToast] = useState(false);
 
   const token = localStorage.getItem('token');
   const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -31,7 +33,7 @@ export default function EventRegistrationsApproval() {
 
   useEffect(() => {
     fetchRegistrations();
-  }, [page, rowsPerPage, filters]);
+  }, [page, rowsPerPage, filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchEvents() {
     try {
@@ -81,6 +83,7 @@ export default function EventRegistrationsApproval() {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async function handleBulkApprove() {
     if (selectedRegs.length === 0) return;
     if (!window.confirm(`Approve ${selectedRegs.length} selected registrations?`)) return;
@@ -93,6 +96,7 @@ export default function EventRegistrationsApproval() {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async function handleBulkReject() {
     if (selectedRegs.length === 0) return;
     if (!window.confirm(`Reject ${selectedRegs.length} selected registrations?`)) return;
@@ -105,6 +109,7 @@ export default function EventRegistrationsApproval() {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSelectReg = (regId: string) => {
     setSelectedRegs(prev => 
       prev.includes(regId) 
@@ -113,6 +118,7 @@ export default function EventRegistrationsApproval() {
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSelectAll = () => {
     const pendingRegs = registrations.filter(reg => reg.status === 'pending');
     setSelectedRegs(
@@ -124,8 +130,9 @@ export default function EventRegistrationsApproval() {
 
   const handleShowBarcode = async (regId: string) => {
     try {
+      const registration = registrations.find(reg => reg.registrationId === regId);
       const qrCodeDataURL = await QRCode.toDataURL(regId);
-      setBarcodeDialog({ open: true, regId, qrCode: qrCodeDataURL });
+      setBarcodeDialog({ open: true, regId, qrCode: qrCodeDataURL, registration });
     } catch (err) {
       alert('Failed to generate barcode');
     }
@@ -133,12 +140,80 @@ export default function EventRegistrationsApproval() {
 
   const handleCopyImage = async () => {
     try {
-      const response = await fetch(barcodeDialog.qrCode);
-      const blob = await response.blob();
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob })
-      ]);
-      alert('QR code copied to clipboard!');
+      // Create canvas to combine QR code with user details
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = async () => {
+        canvas.width = 400;
+        canvas.height = 400;
+        
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = canvas.width / 2;
+        
+        // Load and draw logo in center of QR code
+        const logo = new Image();
+        logo.onload = () => {
+          // Add event name
+          ctx.fillStyle = '#333333';
+          ctx.font = 'bold 16px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(barcodeDialog.registration?.eventId?.name || 'N/A', centerX, 30);
+          
+          // Add event date
+          ctx.font = '14px Arial';
+          const eventDate = barcodeDialog.registration?.eventId?.date ? 
+            new Date(barcodeDialog.registration.eventId.date).toLocaleDateString('en-GB', { 
+              day: 'numeric', month: 'short', year: 'numeric' 
+            }).replace(/,/g, '') : 'TBD';
+          ctx.fillText(eventDate, centerX, 50);
+          
+          // Draw QR code centered
+          const qrSize = 180;
+          const qrX = (canvas.width - qrSize) / 2;
+          ctx.drawImage(img, qrX, 70, qrSize, qrSize);
+          
+          // Draw small logo in center of QR code with white background
+          const logoSize = 20;
+          const logoX = centerX - logoSize/2;
+          const logoY = 70 + qrSize/2 - logoSize/2;
+          
+          // White circular background for logo
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(centerX, 70 + qrSize/2, 15, 0, 2 * Math.PI);
+          ctx.fill();
+          
+          // Draw logo
+          ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+          
+          // Add user details below QR code
+          ctx.fillStyle = '#333333';
+          ctx.font = 'bold 16px Arial';
+          let y = 280;
+          
+          ctx.fillText(barcodeDialog.registration?.fullName || 'N/A', centerX, y);
+          y += 22;
+          ctx.fillText(`📱 ${barcodeDialog.registration?.mobile || 'N/A'}`, centerX, y);
+          y += 22;
+          ctx.fillText(`🆔 ${barcodeDialog.regId}`, centerX, y);
+          
+          // Convert to blob and copy
+          canvas.toBlob(async (blob) => {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            setShowToast(true);
+          });
+        };
+        logo.src = '/images/SKS_Logo_4K-1.png';
+      };
+      
+      img.src = barcodeDialog.qrCode;
     } catch (err) {
       alert('Failed to copy image to clipboard');
     }
@@ -147,7 +222,14 @@ export default function EventRegistrationsApproval() {
   const getWhatsAppMessage = (reg: any) => {
     const eventDate = reg.eventId?.date ? new Date(reg.eventId.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '') : 'TBD';
     const selectedEvent = events.find(e => e._id === selectedEventTemplate);
-    const template = selectedEvent?.messageTemplate || `*Sivoham* {name} garu🙏,\n\n*Congratulations!*\n*Your are selected for "{eventName}" on {eventDate}.*\n\Your Entry ID: *{registrationId}*\nRegistrations will start by 8am\n\n{qrCode}*Jai Gurudev* 🙏`;
+    const template = selectedEvent?.messageTemplate || `*Sivoham* {name} garu🙏,
+
+*Congratulations!*
+*Your are selected for "{eventName}" on {eventDate}.*
+Your Entry ID: *{registrationId}*
+Registrations will start by 8am
+
+{qrCode}*Jai Gurudev* 🙏`;
     
     return template
       .replace(/{name}/g, reg.fullName || 'there')
@@ -159,7 +241,14 @@ export default function EventRegistrationsApproval() {
 
   const handleEditTemplate = (eventId: string) => {
     const event = events.find(e => e._id === eventId);
-    const template = event?.messageTemplate || `*Sivoham* {name} garu🙏,\n\n*Congratulations!*\n*Your are selected for "{eventName}" on {eventDate}.*\n\Your Entry ID: *{registrationId}*\nRegistrations will start by 8am\n\n{qrCode}*Jai Gurudev* 🙏`;
+    const template = event?.messageTemplate || `*Sivoham* {name} garu🙏,
+
+*Congratulations!*
+*Your are selected for "{eventName}" on {eventDate}.*
+Your Entry ID: *{registrationId}*
+Registrations will start by 8am
+
+{qrCode}*Jai Gurudev* 🙏`;
     setEditableTemplate(template);
     setTemplateDialog({ open: true, eventId, template });
   };
@@ -272,6 +361,8 @@ export default function EventRegistrationsApproval() {
 
 
 
+      {loading && <Typography sx={{ textAlign: 'center', py: 2 }}>Loading...</Typography>}
+      
       <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', background: '#fff', mb: 2 }}>
         <Table>
           <TableHead>
@@ -403,22 +494,100 @@ export default function EventRegistrationsApproval() {
       />
 
       <Dialog open={barcodeDialog.open} onClose={() => setBarcodeDialog({ open: false, regId: '', qrCode: '' })} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ textAlign: 'center', fontFamily: 'Lora, serif', color: '#de6b2f' }}>
-          Registration Barcode
+        <DialogTitle sx={{ 
+          fontFamily: 'Lora, serif', 
+          color: 'white', 
+          textAlign: 'center',
+          background: 'linear-gradient(135deg, #de6b2f 0%, #b45309 100%)',
+          py: 1.5
+        }}>
+          📱 Registration Barcode
         </DialogTitle>
-        <DialogContent sx={{ textAlign: 'center', py: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Inter, sans-serif' }}>
-            Registration ID: {barcodeDialog.regId}
-          </Typography>
+        <DialogContent sx={{ py: 2, background: 'linear-gradient(135deg, #fff7f0 0%, #fff3e0 100%)' }}>
+          <Box sx={{ textAlign: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#b45309', mb: 0.5 }}>
+              {barcodeDialog.registration?.eventId?.name || 'N/A'}
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#666', fontWeight: 500 }}>
+              {barcodeDialog.registration?.eventId?.date ? 
+                new Date(barcodeDialog.registration.eventId.date).toLocaleDateString('en-GB', { 
+                  day: 'numeric', month: 'short', year: 'numeric' 
+                }).replace(/,/g, '') : 'TBD'}
+            </Typography>
+          </Box>
+          
           {barcodeDialog.qrCode && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <img 
-                src={barcodeDialog.qrCode} 
-                alt="Registration QR Code" 
-                style={{ maxWidth: '200px', height: 'auto' }}
-              />
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+              <Box sx={{ 
+                p: 2,
+                bgcolor: 'white',
+                borderRadius: 2,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                border: '2px solid #de6b2f',
+                position: 'relative'
+              }}>
+                <img 
+                  src={barcodeDialog.qrCode} 
+                  alt="Registration QR Code" 
+                  style={{ width: '160px', height: '160px', borderRadius: '4px' }}
+                />
+                <Box sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  bgcolor: 'white',
+                  borderRadius: '50%',
+                  p: 0.5,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}>
+                  <img 
+                    src="/images/SKS_Logo_4K-1.png" 
+                    alt="SKS Logo" 
+                    style={{ width: '20px', height: '20px' }}
+                  />
+                </Box>
+              </Box>
             </Box>
           )}
+          
+          <Box sx={{ 
+            bgcolor: 'white', 
+            p: 2, 
+            borderRadius: 2, 
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
+          }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+              <Typography variant="h6" sx={{ 
+                fontFamily: 'Lora, serif', 
+                color: '#b45309', 
+                fontWeight: 700
+              }}>
+                {barcodeDialog.registration?.fullName || 'N/A'}
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 0.5, sm: 2 }, alignItems: { xs: 'flex-start', sm: 'center' } }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ bgcolor: '#25D366', borderRadius: '50%', p: 0.3, display: 'flex' }}>
+                    <Typography sx={{ color: 'white', fontSize: '0.9rem' }}>📱</Typography>
+                  </Box>
+                  <Typography variant="body1" sx={{ color: '#25D366', fontWeight: 600 }}>
+                    {barcodeDialog.registration?.mobile || 'N/A'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ bgcolor: '#de6b2f', borderRadius: '50%', p: 0.3, display: 'flex' }}>
+                    <Typography sx={{ color: 'white', fontSize: '0.9rem' }}>🆔</Typography>
+                  </Box>
+                  <Typography variant="body1" sx={{ color: '#de6b2f', fontWeight: 600, fontFamily: 'monospace' }}>
+                    {barcodeDialog.regId}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
           <Button 
@@ -439,24 +608,93 @@ export default function EventRegistrationsApproval() {
       </Dialog>
 
       <Dialog open={detailsDialog.open} onClose={() => setDetailsDialog({ open: false, registration: null })} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontFamily: 'Lora, serif', color: '#de6b2f' }}>
-          Registration Details
+        <DialogTitle sx={{ 
+          fontFamily: 'Lora, serif', 
+          color: 'white', 
+          textAlign: 'center',
+          background: 'linear-gradient(135deg, #de6b2f 0%, #b45309 100%)',
+          py: 1.5
+        }}>
+          📋 Registration Details
         </DialogTitle>
-        <DialogContent sx={{ py: 3 }}>
+        <DialogContent sx={{ py: 2, background: 'linear-gradient(135deg, #fff7f0 0%, #fff3e0 100%)' }}>
           {detailsDialog.registration && (
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-              <Box><strong>Full Name:</strong> {detailsDialog.registration.fullName || '-'}</Box>
-              <Box><strong>Mobile:</strong> {detailsDialog.registration.mobile || '-'}</Box>
-              <Box><strong>Gender:</strong> {detailsDialog.registration.gender || '-'}</Box>
-              <Box><strong>Age:</strong> {detailsDialog.registration.age || '-'}</Box>
-              <Box><strong>Profession:</strong> {detailsDialog.registration.profession || '-'}</Box>
-              <Box><strong>Address:</strong> {detailsDialog.registration.address || '-'}</Box>
-              <Box><strong>SKS Level:</strong> {detailsDialog.registration.sksLevel || '-'}</Box>
-              <Box><strong>SKS Miracles:</strong> {detailsDialog.registration.sksMiracle || '-'}</Box>
-              <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}><strong>Other Details:</strong> {detailsDialog.registration.otherDetails || '-'}</Box>
-              <Box><strong>Registering For:</strong> {detailsDialog.registration.forWhom === 'self' ? 'Myself' : 'Someone Else'}</Box>
-              <Box><strong>Registration ID:</strong> {detailsDialog.registration.registrationId || '-'}</Box>
-              <Box><strong>Event:</strong> {detailsDialog.registration.eventId?.name || '-'}</Box>
+            <Box>
+              <Box sx={{ textAlign: 'center', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: '#b45309', mb: 0.5 }}>
+                  {detailsDialog.registration.fullName || 'N/A'}
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'center', gap: { xs: 0.5, sm: 3 }, alignItems: 'center' }}>
+                  <Typography variant="body1" sx={{ color: '#25D366', fontWeight: 600 }}>
+                    📱 {detailsDialog.registration.mobile || 'N/A'}
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: '#de6b2f', fontWeight: 600, fontFamily: 'monospace' }}>
+                    🆔 {detailsDialog.registration.registrationId || 'N/A'}
+                  </Typography>
+                </Box>
+              </Box>
+              
+              <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Event sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '50px', color: '#666' }}>Event:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem' }}>{detailsDialog.registration.eventId?.name || 'N/A'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Wc sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '50px', color: '#666' }}>Gender:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem' }}>{detailsDialog.registration.gender || 'N/A'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Cake sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '50px', color: '#666' }}>Age:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem' }}>{detailsDialog.registration.age || 'N/A'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Work sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '50px', color: '#666' }}>Job:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8rem' }}>{detailsDialog.registration.profession || 'N/A'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <School sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '50px', color: '#666' }}>SKS:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem' }}>{detailsDialog.registration.sksLevel || 'N/A'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                      <Star sx={{ color: '#de6b2f', fontSize: '1rem', mt: 0.1 }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '50px', color: '#666' }}>Miracle:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.75rem', lineHeight: 1.2 }}>{detailsDialog.registration.sksMiracle || 'N/A'}</Typography>
+                    </Box>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                      <LocationOn sx={{ color: '#de6b2f', fontSize: '1rem', mt: 0.1 }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '50px', color: '#666' }}>Address:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.75rem', lineHeight: 1.2 }}>{detailsDialog.registration.address || 'N/A'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Group sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '50px', color: '#666' }}>For:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem' }}>{detailsDialog.registration.forWhom === 'self' ? 'Self' : 'Others'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                      <Info sx={{ color: '#de6b2f', fontSize: '1rem', mt: 0.1 }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '50px', color: '#666' }}>Other:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.75rem', lineHeight: 1.2 }}>{detailsDialog.registration.otherDetails || 'N/A'}</Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
             </Box>
           )}
         </DialogContent>
@@ -505,6 +743,14 @@ export default function EventRegistrationsApproval() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={showToast}
+        autoHideDuration={2000}
+        onClose={() => setShowToast(false)}
+        message="QR code copied to clipboard!"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 }

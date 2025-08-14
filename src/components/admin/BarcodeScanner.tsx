@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography, Button, Alert, Paper, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Event, Person, Cake, Work, School, CheckCircle, LocationOn, Group, CalendarToday } from '@mui/icons-material';
 import { markAttendance } from '../../services/api.ts';
 import axios from 'axios';
 import jsQR from 'jsqr';
@@ -14,6 +15,7 @@ export default function BarcodeScanner() {
   const [eventRegistrations, setEventRegistrations] = useState<any[]>([]);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
+  const [userDetailsDialog, setUserDetailsDialog] = useState<{ open: boolean; user: any | null }>({ open: false, user: null });
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -134,9 +136,6 @@ export default function BarcodeScanner() {
     }
 
     try {
-      setMessage('Processing...');
-      setMessageType('info');
-      
       const trimmedId = registrationId.trim();
       const registration = eventRegistrations.find(reg => reg.registrationId === trimmedId);
       
@@ -148,20 +147,45 @@ export default function BarcodeScanner() {
         return;
       }
 
-      if (registration.attended) {
+      // Stop camera when showing user details
+      if (scanning) {
+        stopScanning();
+      }
+      
+      // Show user details popup
+      setUserDetailsDialog({ open: true, user: registration });
+      setManualCode('');
+      
+    } catch (error: any) {
+      console.error('Error finding registration:', error);
+      setMessage(`❌ Error processing registration`);
+      setMessageType('error');
+      setManualCode('');
+      playSound('error');
+    }
+  };
+
+  const confirmMarkAttendance = async () => {
+    if (!userDetailsDialog.user) return;
+    
+    try {
+      setMessage('Processing...');
+      setMessageType('info');
+      
+      if (userDetailsDialog.user.attended) {
         setMessage('⚠️ User already marked as attended');
         setMessageType('info');
-        setManualCode('');
         playSound('error');
+        setUserDetailsDialog({ open: false, user: null });
         return;
       }
       
-      const response = await markAttendance(trimmedId);
+      const response = await markAttendance(userDetailsDialog.user.registrationId);
       
       // Update local state immediately
       setEventRegistrations(prev => 
         prev.map(reg => 
-          reg.registrationId === trimmedId 
+          reg.registrationId === userDetailsDialog.user.registrationId 
             ? { ...reg, attended: true, attendedAt: response.attendedAt || new Date() }
             : reg
         )
@@ -169,14 +193,13 @@ export default function BarcodeScanner() {
       
       setMessage(`✓ ${response.message || 'Attendance marked successfully'}`);
       setMessageType('success');
-      setManualCode('');
       playSound('success');
+      setUserDetailsDialog({ open: false, user: null });
     } catch (error: any) {
       console.error('Mark attendance error:', error);
       const errorMessage = error.message || 'Failed to mark attendance';
       setMessage(`❌ ${errorMessage}`);
       setMessageType('error');
-      setManualCode('');
       playSound('error');
     }
   };
@@ -208,7 +231,7 @@ export default function BarcodeScanner() {
     if (selectedEvent) {
       fetchEventRegistrations();
     }
-  }, [selectedEvent]);
+  }, [selectedEvent]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchEvents() {
     try {
@@ -445,6 +468,132 @@ export default function BarcodeScanner() {
           </Button>
         </Box>
       </Paper>
+
+      <Dialog open={userDetailsDialog.open} onClose={() => setUserDetailsDialog({ open: false, user: null })} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ 
+          fontFamily: 'Lora, serif', 
+          color: 'white', 
+          textAlign: 'center',
+          background: 'linear-gradient(135deg, #de6b2f 0%, #b45309 100%)',
+          py: 1.5
+        }}>
+          👤 User Details
+        </DialogTitle>
+        <DialogContent sx={{ py: 2, background: 'linear-gradient(135deg, #fff7f0 0%, #fff3e0 100%)' }}>
+          {userDetailsDialog.user && (
+            <Box>
+              <Box sx={{ textAlign: 'center', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: '#b45309', mb: 1 }}>
+                  {userDetailsDialog.user.fullName || 'N/A'}
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'center', gap: { xs: 0.5, sm: 3 }, alignItems: 'center' }}>
+                  <Typography variant="body1" sx={{ color: '#25D366', fontWeight: 600 }}>
+                    📱 {userDetailsDialog.user.mobile || 'N/A'}
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: '#de6b2f', fontWeight: 600, fontFamily: 'monospace' }}>
+                    🆔 {userDetailsDialog.user.registrationId}
+                  </Typography>
+                </Box>
+              </Box>
+              
+              <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Event sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '60px', color: '#666' }}>Event:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{userDetailsDialog.user.eventId?.name || 'N/A'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Person sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '60px', color: '#666' }}>Gender:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{userDetailsDialog.user.gender || 'N/A'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Cake sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '60px', color: '#666' }}>Age:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{userDetailsDialog.user.age || 'N/A'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Work sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '60px', color: '#666' }}>Job:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8rem' }}>{userDetailsDialog.user.profession || 'N/A'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <School sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '60px', color: '#666' }}>SKS:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{userDetailsDialog.user.sksLevel || 'N/A'}</Typography>
+                    </Box>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CheckCircle sx={{ color: userDetailsDialog.user.status === 'approved' ? '#2e7d32' : '#ed6c02', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '60px', color: '#666' }}>Status:</Typography>
+                      <Typography variant="body2" sx={{ color: userDetailsDialog.user.status === 'approved' ? '#2e7d32' : '#ed6c02', fontWeight: 600, fontSize: '0.85rem' }}>
+                        {userDetailsDialog.user.status?.charAt(0).toUpperCase() + userDetailsDialog.user.status?.slice(1)}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CheckCircle sx={{ color: userDetailsDialog.user.attended ? '#2e7d32' : '#d32f2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '60px', color: '#666' }}>Attended:</Typography>
+                      <Typography variant="body2" sx={{ color: userDetailsDialog.user.attended ? '#2e7d32' : '#d32f2f', fontWeight: 600, fontSize: '0.85rem' }}>
+                        {userDetailsDialog.user.attended ? 'Yes' : 'No'}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                      <LocationOn sx={{ color: '#de6b2f', fontSize: '1rem', mt: 0.1 }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '60px', color: '#666' }}>Address:</Typography>
+                      <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.2, fontWeight: 500 }}>{userDetailsDialog.user.address || 'N/A'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Group sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '60px', color: '#666' }}>For:</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem' }}>{userDetailsDialog.user.forWhom === 'self' ? 'Self' : 'Others'}</Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CalendarToday sx={{ color: '#de6b2f', fontSize: '1rem' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '60px', color: '#666' }}>Date:</Typography>
+                      <Typography variant="body2" sx={{ fontSize: '0.75rem', fontWeight: 500 }}>
+                        {userDetailsDialog.user.registeredAt ? new Date(userDetailsDialog.user.registeredAt).toLocaleDateString() : 'N/A'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
+          <Button 
+            onClick={() => setUserDetailsDialog({ open: false, user: null })}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmMarkAttendance}
+            variant="contained"
+            disabled={userDetailsDialog.user?.attended}
+            sx={{ 
+              background: userDetailsDialog.user?.attended 
+                ? '#ccc' 
+                : 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)',
+              '&:disabled': { color: '#666' }
+            }}
+          >
+            {userDetailsDialog.user?.attended ? 'Already Attended' : 'Mark Attendance'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

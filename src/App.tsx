@@ -1,4 +1,4 @@
-/* global window, document, localStorage, fetch, console, Blob, URL, alert */
+/* global window, localStorage, console */
 import React, { useState, Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.tsx';

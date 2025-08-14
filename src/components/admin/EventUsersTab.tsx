@@ -42,7 +42,7 @@ export default function EventUsersTab() {
   useEffect(() => {
     fetchEvents();
     fetchData();
-  }, [page, rowsPerPage, filters]);
+  }, [page, rowsPerPage, filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchEvents() {
     try {

@@ -1,4 +1,4 @@
-/* global window, document, localStorage, fetch, console, Blob, URL, alert */
+/* global window, localStorage */
 import React, { useState, useRef } from 'react';
 import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar, Grid } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';

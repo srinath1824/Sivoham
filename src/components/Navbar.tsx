@@ -1,10 +1,10 @@
-/* global window, document */
+
 import React from 'react';
 import { AppBar, Toolbar, Typography, Box, IconButton, Drawer, List, ListItem, ListItemText, Divider, ListItemButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import i18n from 'i18next';
+
 
 /**
  * Navigation links for the app.
