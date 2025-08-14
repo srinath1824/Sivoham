@@ -21,7 +21,8 @@ const EventsRegisteredSchema = new mongoose.Schema({
   registrationId: { type: String },
   status: { type: String },
   attended: { type: Boolean, default: false },
-  attendedAt: { type: Date }
+  attendedAt: { type: Date },
+  whatsappSent: { type: Boolean, default: false }
 }, { _id: false });
 
 module.exports = EventsRegisteredSchema; 
