@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, TablePagination, Select, MenuItem, FormControl, InputLabel, TextField, Snackbar } from '@mui/material';
 import { Person, Phone, Wc, Cake, Work, LocationOn, School, Star, Info, Group, Badge, Event } from '@mui/icons-material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import AdminFilters from './AdminFilters.tsx';
 import QRCode from 'qrcode';
 
@@ -361,8 +362,6 @@ Registrations will start by 8am
 
 
 
-      {loading && <Typography sx={{ textAlign: 'center', py: 2 }}>Loading...</Typography>}
-      
       <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', background: '#fff', mb: 2 }}>
         <Table>
           <TableHead>
@@ -379,10 +378,13 @@ Registrations will start by 8am
             </TableRow>
           </TableHead>
           <TableBody>
-            {registrations.length === 0 && (
+            {loading && (
+              <TableRow><TableCell colSpan={8} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>Loading...</TableCell></TableRow>
+            )}
+            {!loading && registrations.length === 0 && (
               <TableRow><TableCell colSpan={8} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>No registrations found.</TableCell></TableRow>
             )}
-            {registrations.map((reg, idx) => (
+            {!loading && registrations.map((reg, idx) => (
               <TableRow key={reg._id} hover sx={{ background: idx % 2 === 0 ? '#fff' : '#f9f4ee', '&:hover': { background: '#fff3e0' } }}>
 
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333', fontWeight: 600 }}>{reg.eventId?.name}</TableCell>
@@ -406,24 +408,109 @@ Registrations will start by 8am
                   </Box>
                 </TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', textAlign: 'center' }}>
-                  {reg.mobile && (
-                    <IconButton
-                      onClick={() => {
-                        const message = getWhatsAppMessage(reg);
-                        const whatsappUrl = `https://web.whatsapp.com/send?phone=${reg.mobile}&text=${encodeURIComponent(message)}`;
-                        window.open(whatsappUrl, '_blank');
-                      }}
-                      sx={{ 
-                        color: '#25D366',
-                        '&:hover': { 
-                          backgroundColor: 'rgba(37, 211, 102, 0.1)' 
-                        }
-                      }}
-                      title="Send WhatsApp message"
-                    >
-                      <WhatsAppIcon />
-                    </IconButton>
-                  )}
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+                    {reg.status === 'approved' && (
+                      <IconButton
+                        onClick={async () => {
+                          try {
+                            const qrCodeDataURL = await QRCode.toDataURL(reg.registrationId);
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            const qrImg = new Image();
+                            
+                            qrImg.onload = async () => {
+                              canvas.width = 400;
+                              canvas.height = 400;
+                              
+                              ctx.fillStyle = '#ffffff';
+                              ctx.fillRect(0, 0, canvas.width, canvas.height);
+                              
+                              const centerX = canvas.width / 2;
+                              
+                              const logo = new Image();
+                              logo.onload = () => {
+                                ctx.fillStyle = '#333333';
+                                ctx.font = 'bold 16px Arial';
+                                ctx.textAlign = 'center';
+                                ctx.fillText(reg.eventId?.name || 'N/A', centerX, 30);
+                                
+                                ctx.font = '14px Arial';
+                                const eventDate = reg.eventId?.date ? 
+                                  new Date(reg.eventId.date).toLocaleDateString('en-GB', { 
+                                    day: 'numeric', month: 'short', year: 'numeric' 
+                                  }).replace(/,/g, '') : 'TBD';
+                                ctx.fillText(eventDate, centerX, 50);
+                                
+                                const qrSize = 180;
+                                const qrX = (canvas.width - qrSize) / 2;
+                                ctx.drawImage(qrImg, qrX, 70, qrSize, qrSize);
+                                
+                                const logoSize = 20;
+                                const logoX = centerX - logoSize/2;
+                                const logoY = 70 + qrSize/2 - logoSize/2;
+                                
+                                ctx.fillStyle = '#ffffff';
+                                ctx.beginPath();
+                                ctx.arc(centerX, 70 + qrSize/2, 15, 0, 2 * Math.PI);
+                                ctx.fill();
+                                
+                                ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+                                
+                                ctx.fillStyle = '#333333';
+                                ctx.font = 'bold 16px Arial';
+                                let y = 280;
+                                
+                                ctx.fillText(reg.fullName || 'N/A', centerX, y);
+                                y += 22;
+                                ctx.fillText(`📱 ${reg.mobile || 'N/A'}`, centerX, y);
+                                y += 22;
+                                ctx.fillText(`🆔 ${reg.registrationId}`, centerX, y);
+                                
+                                canvas.toBlob(async (blob) => {
+                                  await navigator.clipboard.write([
+                                    new ClipboardItem({ 'image/png': blob })
+                                  ]);
+                                  setShowToast(true);
+                                });
+                              };
+                              logo.src = '/images/SKS_Logo_4K-1.png';
+                            };
+                            
+                            qrImg.src = qrCodeDataURL;
+                          } catch (err) {
+                            alert('Failed to copy barcode');
+                          }
+                        }}
+                        sx={{ 
+                          color: '#de6b2f',
+                          '&:hover': { 
+                            backgroundColor: 'rgba(222, 107, 47, 0.1)' 
+                          }
+                        }}
+                        title="Copy QR code"
+                      >
+                        <ContentCopyIcon />
+                      </IconButton>
+                    )}
+                    {reg.mobile && (
+                      <IconButton
+                        onClick={() => {
+                          const message = getWhatsAppMessage(reg);
+                          const whatsappUrl = `https://web.whatsapp.com/send?phone=${reg.mobile}&text=${encodeURIComponent(message)}`;
+                          window.open(whatsappUrl, '_blank');
+                        }}
+                        sx={{ 
+                          color: '#25D366',
+                          '&:hover': { 
+                            backgroundColor: 'rgba(37, 211, 102, 0.1)' 
+                          }
+                        }}
+                        title="Send WhatsApp message"
+                      >
+                        <WhatsAppIcon />
+                      </IconButton>
+                    )}
+                  </Box>
                 </TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', textAlign: 'center' }}>
                   <Checkbox
@@ -476,22 +563,23 @@ Registrations will start by 8am
               </TableRow>
             ))}
           </TableBody>
-        </Table>
-      </TableContainer>
 
-      <TablePagination
-        component="div"
-        count={totalCount}
-        page={page}
-        onPageChange={(_, newPage) => setPage(newPage)}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={(e) => {
-          setRowsPerPage(parseInt(e.target.value, 10));
-          setPage(0);
-        }}
-        rowsPerPageOptions={[5, 10, 25, 50]}
-        sx={{ mb: 4 }}
-      />
+
+        </Table>
+        <TablePagination
+          component="div"
+          count={totalCount}
+          page={page}
+          onPageChange={(_, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          sx={{ borderTop: '1px solid #e0e0e0' }}
+        />
+      </TableContainer>
 
       <Dialog open={barcodeDialog.open} onClose={() => setBarcodeDialog({ open: false, regId: '', qrCode: '' })} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ 
