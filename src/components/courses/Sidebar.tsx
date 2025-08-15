@@ -95,6 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           const allDaysCompleted = course.days.every(
             (dayObj: any) => !!progress[getKey(course.level, dayObj.day)]?.completed,
           );
+          const levelUnlocked = isLevelUnlocked(course.level);
           // After Level 2, always insert Meditation Test
           if (course.level === 2) {
             const meditationTestPassed = progress['meditationTestPassed'] || false;
@@ -226,6 +227,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   sx={{ fontWeight: 700, color: '#de6b2f', display: 'flex', alignItems: 'center' }}
                 >
                   {`Level ${course.level}`}
+                  {!levelUnlocked && <LockIcon fontSize="small" sx={{ color: 'grey.400', ml: 1 }} />}
                   {allDaysCompleted && (
                     <CheckCircleIcon fontSize="small" sx={{ color: 'success.main', ml: 1 }} />
                   )}

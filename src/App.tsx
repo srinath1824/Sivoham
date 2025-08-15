@@ -1,8 +1,8 @@
-/* global window, localStorage, console */
 import React, { useState, Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.tsx';
 import Footer from './components/Footer.tsx';
+import JaiGurudevLoader from './components/JaiGurudevLoader.tsx';
 import Home from './pages/Home.tsx';
 import LoginDialog from './components/LoginDialog.tsx';
 import Join from './pages/Join.tsx';
@@ -40,7 +40,7 @@ const Events = lazy(() => import('./pages/Events.tsx'));
  * Handles routing, login dialog, and global layout.
  * @returns {JSX.Element}
  */
-function App({ navigate }) {
+function App({ navigate }: { navigate: any }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [loadingUser, setLoadingUser] = useState(true);
@@ -69,7 +69,7 @@ function App({ navigate }) {
     fetchUserProfileSecure();
   }, [location.pathname]);
 
-  async function handleLogin(u, token) {
+  async function handleLogin(u: any, token: string) {
     if (token) localStorage.setItem('token', token);
     setLoginOpen(false);
     setLoadingUser(true);
@@ -104,7 +104,7 @@ function App({ navigate }) {
   }
 
   if (loadingUser) {
-    return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>Loading...</div>;
+    return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><JaiGurudevLoader size="large" /></div>;
   }
 
   return (
@@ -162,7 +162,7 @@ function App({ navigate }) {
  * Message shown when login is required to access a route.
  * @returns {JSX.Element}
  */
-function LoginRequiredMessage({ onLoginClick }) {
+function LoginRequiredMessage({ onLoginClick }: { onLoginClick: () => void }) {
   return (
     <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fff7f0', borderRadius: 16, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', margin: '2rem auto', maxWidth: 480, padding: '2.5rem 1.5rem' }}>
       <span style={{ fontSize: 54, color: '#de6b2f', marginBottom: 16 }}>🔒</span>
@@ -198,27 +198,23 @@ function LoginRequiredMessage({ onLoginClick }) {
  * @returns {JSX.Element}
  */
 function SectionLoader() {
-  return (
-    <div className="section-loader-wrapper">
-      <div className="section-loader"></div>
-    </div>
-  );
+  return <JaiGurudevLoader size="medium" />;
 }
 
 /**
  * Error boundary fallback component
  */
-class ErrorBoundary extends React.Component {
-  constructor(props) {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode; fallback?: React.ReactNode }, { hasError: boolean; error: any }> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: any) {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: any, errorInfo: any) {
     console.error('Error boundary caught an error:', error, errorInfo);
   }
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, MenuItem, TablePagination } from '@mui/material';
 import AdminFilters from './AdminFilters.tsx';
+import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 
 export default function EventsManagement() {
   const [events, setEvents] = useState<any[]>([]);
@@ -112,6 +113,13 @@ export default function EventsManagement() {
       <Typography variant="h4" sx={{ mb: 2, fontFamily: 'Lora, serif', color: '#b45309', fontWeight: 700 }}>
         Events Management ({totalCount})
       </Typography>
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <JaiGurudevLoader />
+        </Box>
+      ) : (
+        <>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <AdminFilters 
@@ -266,6 +274,8 @@ export default function EventsManagement() {
           </Button>
         </DialogActions>
       </Dialog>
+        </>
+      )}
     </Box>
   );
 }

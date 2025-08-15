@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Button, Checkbox, TablePagination } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Checkbox, TablePagination } from '@mui/material';
+import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 import { Download } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 import AdminFilters from './AdminFilters.tsx';
@@ -236,7 +237,7 @@ export default function EventUsersTab() {
       
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <CircularProgress />
+          <JaiGurudevLoader />
         </Box>
       ) : (
         <>

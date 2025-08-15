@@ -5,6 +5,7 @@ import { Person, Phone, Wc, Cake, Work, LocationOn, School, Star, Info, Group, B
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import AdminFilters from './AdminFilters.tsx';
+import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 import QRCode from 'qrcode';
 
 export default function EventRegistrationsApproval() {
@@ -317,48 +318,122 @@ Registrations will start by 8am
         Event Registrations (Approval Required) ({totalCount})
       </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-      <AdminFilters 
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        filterOptions={filterOptions}
-      />
-
-      <Paper sx={{ p: 2, mb: 3, bgcolor: '#fff7f0' }}>
-        <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Lora, serif', color: '#de6b2f' }}>
-          WhatsApp Message Template
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Select Event Template</InputLabel>
-            <Select
-              value={selectedEventTemplate}
-              onChange={(e) => setSelectedEventTemplate(e.target.value)}
-              label="Select Event Template"
-            >
-              <MenuItem value="">Default Template</MenuItem>
-              {events.map((event) => (
-                <MenuItem key={event._id} value={event._id}>
-                  {event.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {selectedEventTemplate && (
-            <Button 
-              variant="outlined" 
-              onClick={() => handleEditTemplate(selectedEventTemplate)}
-              sx={{ borderColor: '#de6b2f', color: '#de6b2f' }}
-            >
-              Edit Template
-            </Button>
-          )}
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <JaiGurudevLoader />
         </Box>
-        <Typography variant="body2" sx={{ mt: 1, color: '#666', fontStyle: 'italic' }}>
-          Available placeholders: {'{name}'}, {'{eventName}'}, {'{eventDate}'}, {'{registrationId}'}, {'{qrCode}'}
-        </Typography>
-      </Paper>
+      ) : (
+        <>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3, mb: 3 }}>
+            <Box sx={{ flex: 1 }}>
+              <AdminFilters 
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                filterOptions={filterOptions}
+              />
+            </Box>
+            <Paper sx={{ 
+              p: 2, 
+              background: 'linear-gradient(135deg, #fff7f0 0%, #ffeee0 100%)', 
+              minWidth: { xs: '100%', lg: 340 },
+              borderRadius: 3,
+              boxShadow: '0 4px 20px rgba(222,107,47,0.15)',
+              border: '1px solid rgba(222,107,47,0.2)',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 3,
+                background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)'
+              }
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <Box sx={{ 
+                  width: 24, 
+                  height: 24, 
+                  borderRadius: '50%', 
+                  background: 'linear-gradient(135deg, #de6b2f 0%, #b45309 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '0.8rem'
+                }}>
+                  💬
+                </Box>
+                <Typography variant="body1" sx={{ fontFamily: 'Lora, serif', color: '#de6b2f', fontWeight: 700 }}>
+                  WhatsApp Template
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <FormControl size="small" sx={{ minWidth: 200 }}>
+                  <InputLabel sx={{ fontSize: '0.8rem', fontWeight: 600 }}>Event Template</InputLabel>
+                  <Select
+                    value={selectedEventTemplate}
+                    onChange={(e) => setSelectedEventTemplate(e.target.value)}
+                    label="Event Template"
+                    sx={{ 
+                      fontSize: '0.8rem',
+                      borderRadius: 2,
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(222,107,47,0.3)'
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(222,107,47,0.5)'
+                      }
+                    }}
+                  >
+                    <MenuItem value="" sx={{ fontSize: '0.8rem' }}>Default Template</MenuItem>
+                    {events.map((event) => (
+                      <MenuItem key={event._id} value={event._id} sx={{ fontSize: '0.8rem' }}>
+                        🎉 {event.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                {selectedEventTemplate && (
+                  <Button 
+                    size="small"
+                    variant="contained" 
+                    onClick={() => handleEditTemplate(selectedEventTemplate)}
+                    sx={{ 
+                      background: 'linear-gradient(135deg, #de6b2f 0%, #b45309 100%)',
+                      color: 'white',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      boxShadow: '0 2px 8px rgba(222,107,47,0.3)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #b45309 0%, #de6b2f 100%)',
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 4px 12px rgba(222,107,47,0.4)'
+                      }
+                    }}
+                  >
+                    ✏️ Edit Template
+                  </Button>
+                )}
+              </Box>
+              <Typography variant="caption" sx={{ 
+                display: 'block', 
+                mt: 1, 
+                color: '#8b5a2b', 
+                fontSize: '0.7rem',
+                fontStyle: 'italic',
+                opacity: 0.8,
+                lineHeight: 1.3
+              }}>
+                📝 Placeholders: {'{name}'}, {'{eventName}'}, {'{eventDate}'}, {'{registrationId}'}, {'{qrCode}'}
+              </Typography>
+            </Paper>
+          </Box>
 
 
 
@@ -378,13 +453,10 @@ Registrations will start by 8am
             </TableRow>
           </TableHead>
           <TableBody>
-            {loading && (
-              <TableRow><TableCell colSpan={8} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>Loading...</TableCell></TableRow>
-            )}
-            {!loading && registrations.length === 0 && (
+            {registrations.length === 0 && (
               <TableRow><TableCell colSpan={8} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>No registrations found.</TableCell></TableRow>
             )}
-            {!loading && registrations.map((reg, idx) => (
+            {registrations.map((reg, idx) => (
               <TableRow key={reg._id} hover sx={{ background: idx % 2 === 0 ? '#fff' : '#f9f4ee', '&:hover': { background: '#fff3e0' } }}>
 
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333', fontWeight: 600 }}>{reg.eventId?.name}</TableCell>
@@ -839,6 +911,8 @@ Registrations will start by 8am
         message="QR code copied to clipboard!"
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
+        </>
+      )}
     </Box>
   );
 }

@@ -3,6 +3,7 @@ import { getUsers, approveUser, rejectUser, bulkApproveUsers, bulkRejectUsers } 
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, IconButton, TablePagination, Select, MenuItem, FormControl, InputLabel, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import AdminFilters from './AdminFilters.tsx';
+import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 import axios from 'axios';
 
 export default function AdminRequestsContent() {
@@ -153,11 +154,32 @@ export default function AdminRequestsContent() {
       const email = user.email?.toLowerCase() || '';
       const status = user.isSelected ? 'approved' : 'pending';
       
+      // Date filtering
+      let dateMatch = true;
+      if (filters.registeredFrom || filters.registeredTo) {
+        const userDate = user.createdAt ? new Date(user.createdAt) : null;
+        if (userDate) {
+          if (filters.registeredFrom) {
+            const fromDate = new Date(filters.registeredFrom);
+            fromDate.setHours(0, 0, 0, 0);
+            if (userDate < fromDate) dateMatch = false;
+          }
+          if (filters.registeredTo) {
+            const toDate = new Date(filters.registeredTo);
+            toDate.setHours(23, 59, 59, 999);
+            if (userDate > toDate) dateMatch = false;
+          }
+        } else {
+          dateMatch = false;
+        }
+      }
+      
       return (!filters.name || name.includes(filters.name.toLowerCase())) &&
              (!filters.mobile || mobile.includes(filters.mobile.toLowerCase())) &&
              (!filters.email || email.includes(filters.email.toLowerCase())) &&
              (!filters.status || status === filters.status) &&
-             (!filters.whatsappSent || (filters.whatsappSent === 'true' ? user.whatsappSent : !user.whatsappSent));
+             (!filters.whatsappSent || (filters.whatsappSent === 'true' ? user.whatsappSent : !user.whatsappSent)) &&
+             dateMatch;
     });
   }, [users, filters]);
 
@@ -169,6 +191,8 @@ export default function AdminRequestsContent() {
     { key: 'name', label: 'Name', type: 'text' as const },
     { key: 'mobile', label: 'Mobile', type: 'text' as const },
     { key: 'email', label: 'Email', type: 'text' as const },
+    { key: 'registeredFrom', label: 'Registered From', type: 'date' as const },
+    { key: 'registeredTo', label: 'Registered To', type: 'date' as const },
     { key: 'status', label: 'Status', type: 'select' as const, options: [
       { value: 'pending', label: 'Pending' },
       { value: 'approved', label: 'Approved' }
@@ -185,45 +209,168 @@ export default function AdminRequestsContent() {
         User Registration Requests ({totalCount})
       </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-      <AdminFilters 
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        filterOptions={filterOptions}
-      />
-
-      <Paper sx={{ p: 2, mb: 3, bgcolor: '#fff7f0' }}>
-        <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Lora, serif', color: '#de6b2f' }}>
-          WhatsApp Message Template
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          <Button 
-            variant="outlined" 
-            onClick={handleEditUserTemplate}
-            sx={{ borderColor: '#de6b2f', color: '#de6b2f' }}
-          >
-            Edit User Template
-          </Button>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <JaiGurudevLoader />
         </Box>
-        <Typography variant="body2" sx={{ mt: 1, color: '#666', fontStyle: 'italic' }}>
-          Available placeholders: {'{name}'}, {'{status}'}
-        </Typography>
-      </Paper>
+      ) : (
+        <>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3, mb: 3 }}>
+            <Box sx={{ flex: 1 }}>
+              <AdminFilters 
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                filterOptions={filterOptions}
+              />
+            </Box>
+            <Paper sx={{ 
+              p: 2, 
+              background: 'linear-gradient(135deg, #fff7f0 0%, #ffeee0 100%)', 
+              minWidth: { xs: '100%', lg: 300 },
+              borderRadius: 3,
+              boxShadow: '0 4px 20px rgba(222,107,47,0.15)',
+              border: '1px solid rgba(222,107,47,0.2)',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 3,
+                background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)'
+              }
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <Box sx={{ 
+                  width: 24, 
+                  height: 24, 
+                  borderRadius: '50%', 
+                  background: 'linear-gradient(135deg, #de6b2f 0%, #b45309 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '0.8rem'
+                }}>
+                  💬
+                </Box>
+                <Typography variant="body1" sx={{ fontFamily: 'Lora, serif', color: '#de6b2f', fontWeight: 700 }}>
+                  WhatsApp Template
+                </Typography>
+              </Box>
+              <Button 
+                size="small"
+                variant="contained" 
+                onClick={handleEditUserTemplate}
+                sx={{ 
+                  background: 'linear-gradient(135deg, #de6b2f 0%, #b45309 100%)',
+                  color: 'white',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  boxShadow: '0 2px 8px rgba(222,107,47,0.3)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #b45309 0%, #de6b2f 100%)',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 12px rgba(222,107,47,0.4)'
+                  }
+                }}
+              >
+                ✏️ Edit Template
+              </Button>
+              <Typography variant="caption" sx={{ 
+                display: 'block', 
+                mt: 1, 
+                color: '#8b5a2b', 
+                fontSize: '0.7rem',
+                fontStyle: 'italic',
+                opacity: 0.8
+              }}>
+                📝 Placeholders: {'{name}'}, {'{status}'}
+              </Typography>
+            </Paper>
+          </Box>
 
       {selectedUsers.length > 0 && (
-        <Box sx={{ mb: 2, p: 2, bgcolor: '#fff3e0', borderRadius: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <Typography variant="body2" sx={{ alignSelf: 'center', fontWeight: 600 }}>
-            {selectedUsers.length} users selected
-          </Typography>
-          <Button size="small" color="success" variant="contained" onClick={handleBulkApprove}>
-            Bulk Approve
+        <Box sx={{ 
+          mb: 3, 
+          p: 2.5, 
+          background: 'linear-gradient(135deg, #fff3e0 0%, #ffe8cc 100%)', 
+          borderRadius: 3, 
+          display: 'flex', 
+          gap: 2, 
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          boxShadow: '0 4px 16px rgba(255,152,0,0.15)',
+          border: '1px solid rgba(255,152,0,0.2)'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ 
+              width: 20, 
+              height: 20, 
+              borderRadius: '50%', 
+              background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontSize: '0.7rem',
+              fontWeight: 700
+            }}>
+              {selectedUsers.length}
+            </Box>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: '#e65100' }}>
+              users selected
+            </Typography>
+          </Box>
+          <Button 
+            size="small" 
+            variant="contained" 
+            onClick={handleBulkApprove}
+            sx={{ 
+              background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
+              fontWeight: 600,
+              textTransform: 'none',
+              borderRadius: 2
+            }}
+          >
+            ✅ Bulk Approve
           </Button>
-          <Button size="small" color="error" variant="contained" onClick={handleBulkReject}>
-            Bulk Reject
+          <Button 
+            size="small" 
+            variant="contained" 
+            onClick={handleBulkReject}
+            sx={{ 
+              background: 'linear-gradient(135deg, #f44336 0%, #c62828 100%)',
+              fontWeight: 600,
+              textTransform: 'none',
+              borderRadius: 2
+            }}
+          >
+            ❌ Bulk Reject
           </Button>
-          <Button size="small" variant="outlined" onClick={() => setSelectedUsers([])}>
-            Clear Selection
+          <Button 
+            size="small" 
+            variant="outlined" 
+            onClick={() => setSelectedUsers([])}
+            sx={{ 
+              borderColor: '#ff9800',
+              color: '#e65100',
+              fontWeight: 600,
+              textTransform: 'none',
+              borderRadius: 2,
+              '&:hover': {
+                borderColor: '#f57c00',
+                backgroundColor: 'rgba(255,152,0,0.1)'
+              }
+            }}
+          >
+            🗑️ Clear
           </Button>
         </Box>
       )}
@@ -243,6 +390,7 @@ export default function AdminRequestsContent() {
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Name</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Mobile</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Email</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Registration Date</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Status</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>WhatsApp</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Message Sent</TableCell>
@@ -264,6 +412,9 @@ export default function AdminRequestsContent() {
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{user.firstName} {user.lastName}</TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{user.mobile}</TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{user.email}</TableCell>
+                <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#666' }}>
+                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
+                </TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: user.isSelected ? '#2e7d32' : '#ed6c02', fontWeight: 600 }}>{user.isSelected ? 'Approved' : 'Pending'}</TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', textAlign: 'center' }}>
                   {user.mobile && (
@@ -371,6 +522,8 @@ export default function AdminRequestsContent() {
           </Button>
         </DialogActions>
       </Dialog>
+        </>
+      )}
     </Box>
   );
 }

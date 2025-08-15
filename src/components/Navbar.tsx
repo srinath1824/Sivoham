@@ -26,15 +26,16 @@ const navLinks = [
  */
 const mobileDrawerTabs = ['nav.gallery', 'nav.testimonials', 'nav.joinUs', 'nav.progress'];
 
+interface NavbarProps {
+  onLoginClick?: () => void;
+  user?: any;
+  onLogoutClick?: () => void;
+}
+
 /**
  * Main navigation bar for the app.
- * @param {object} props
- * @param {() => void} [props.onLoginClick] - Handler for login button click.
- * @param {boolean} [props.isLoggedIn] - Whether the user is logged in.
- * @param {() => void} [props.onLogoutClick] - Handler for logout button click.
- * @returns {JSX.Element}
  */
-export default function Navbar({ onLoginClick, user, onLogoutClick }) {
+export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProps) {
   const { t } = useTranslation();
   const isLoggedIn = !!user;
   const isAdmin = user && user.isAdmin;
@@ -53,7 +54,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }) {
   const navigate = useNavigate();
 
   // Handler for anchor links
-  const handleAnchorNav = (hash) => (e) => {
+  const handleAnchorNav = (hash: string) => (e: React.MouseEvent) => {
     e.preventDefault();
     navigate('/');
     setTimeout(() => {

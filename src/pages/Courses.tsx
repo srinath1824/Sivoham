@@ -1,19 +1,13 @@
 /* global window, localStorage */
 import React, { useState, useRef } from 'react';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar, Grid } from '@mui/material';
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import './Courses.css';
 import Sidebar from '../components/courses/Sidebar.tsx';
 import VideoPlayer from '../components/courses/VideoPlayer.tsx';
 import FeedbackSection from '../components/courses/FeedbackSection.tsx';
 import VideoMeditationTest from '../components/courses/VideoMeditationTest.tsx';
-// @ts-ignore
-import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale } from 'chart.js';
 import {
-  SKIP_LOGIN,
-  USE_CDN_HLS,
-  HLS_URLS,
-  DRAWER_WIDTH,
   STORAGE_KEY,
   INITIAL_LEVEL_TEST,
   mockCourses,
@@ -84,7 +78,7 @@ function LoginDialog({ open, onClose, onLoginSuccess }: { open: boolean, onClose
       <DialogActions>
         <Button onClick={onClose} color="inherit">Cancel</Button>
         <Button onClick={handleLogin} color="primary" variant="contained" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
+          {loading ? 'Jai Gurudev...' : 'Login'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -155,7 +149,7 @@ function RegistrationDialog({ open, onClose, mobile, onRegisterSuccess }: { open
       <DialogActions>
         <Button onClick={onClose} color="inherit">Cancel</Button>
         <Button onClick={handleRegister} color="primary" variant="contained" disabled={loading}>
-          {loading ? 'Registering...' : 'Register'}
+          {loading ? 'Jai Gurudev...' : 'Register'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -205,9 +199,11 @@ const Courses = () => {
   const [showCompleteToast, setShowCompleteToast] = useState(false);
   const [videoTestOpen, setVideoTestOpen] = useState(false);
   const [videoTestResult, setVideoTestResult] = useState<any>(null);
-  const [videoTestReportOpen, setVideoTestReportOpen] = useState(false);
-  const [videoTestReportData, setVideoTestReportData] = useState(null);
   const [now, setNow] = useState(Date.now());
+  const [courseProgress, setCourseProgress] = useState(() => {
+    const saved = localStorage.getItem('courseProgress');
+    return saved ? JSON.parse(saved) : null;
+  });
 
   // Time window logic (move here to avoid conditional hook call)
   const [currentTime, setCurrentTime] = React.useState(new Date());
@@ -285,7 +281,7 @@ const Courses = () => {
     // Optionally, poll every 30s if you want auto-refresh
     // const interval = setInterval(refreshUser, 30000);
     // return () => clearInterval(interval);
-  }, [user && user._id, token]);
+  }, [user?._id, token, user?.isSelected]);
 
   if (!user) {
     return (
@@ -414,7 +410,7 @@ const Courses = () => {
     setVideoEnded(true);
     setWatchedSeconds(videoDuration);
     try {
-      await updateProgress({
+      const response = await updateProgress({
         level: selectedLevel,
         day: selectedDay,
         completed: true,
@@ -423,6 +419,14 @@ const Courses = () => {
         videoDuration,
         feedback: progress[currentKey]?.feedback || '',
       });
+      
+      // Use courseProgress from response if available
+      if (response.courseProgress) {
+        console.log('Course Progress:', response.courseProgress);
+        setCourseProgress(response.courseProgress);
+        localStorage.setItem('courseProgress', JSON.stringify(response.courseProgress));
+      }
+      
       // Refetch progress from backend
       const progressArr = await getProgress();
       const progObj = {};
@@ -442,12 +446,39 @@ const Courses = () => {
       // Find current level's days
       const currentLevelObj = mockCourses.find(l => l.level === selectedLevel);
       const allDaysCompleted = currentLevelObj?.days.every((d) => !!progObj[getKey(selectedLevel, d.day)]?.completed);
+      
       if (allDaysCompleted) {
-        // Find next unlocked level
-        const nextLevelObj = mockCourses.find(l => l.level === selectedLevel + 1);
-        if (nextLevelObj && isLevelUnlocked(selectedLevel + 1)) {
-          setSelectedLevel(selectedLevel + 1);
-          setSelectedDay(1);
+        // Mark level as completed in levelTest state
+        const updatedLevelTest = {
+          ...levelTest,
+          [selectedLevel]: {
+            ...levelTest[selectedLevel],
+            testPassed: true,
+            firstCompletedAt: levelTest[selectedLevel]?.firstCompletedAt || Date.now()
+          }
+        };
+        setLevelTest(updatedLevelTest);
+        localStorage.setItem('levelTest', JSON.stringify(updatedLevelTest));
+        
+        // Find next level to advance to
+        if (selectedLevel === 2) {
+          // After Level 2, go to meditation test
+          setSelectedLevel(3);
+          setSelectedDay('meditationTest');
+        } else if (selectedLevel < 4) {
+          // For other levels, advance to next level
+          const nextLevelObj = mockCourses.find(l => l.level === selectedLevel + 1);
+          if (nextLevelObj) {
+            setSelectedLevel(selectedLevel + 1);
+            setSelectedDay(1);
+          }
+        }
+      } else {
+        // Advance to next day in current level
+        const nextDay = selectedDay + 1;
+        const nextDayExists = currentLevelObj?.days.find(d => d.day === nextDay);
+        if (nextDayExists) {
+          setSelectedDay(nextDay);
         }
       }
     } catch (err) {
@@ -471,7 +502,7 @@ const Courses = () => {
     };
     setProgress(updatedProgress);
     try {
-      await updateProgress({
+      const response = await updateProgress({
         level: selectedLevel,
         day: selectedDay,
         completed: progress[currentKey]?.completed || false,
@@ -480,6 +511,14 @@ const Courses = () => {
         watchedSeconds: progress[currentKey]?.watchedSeconds || 0,
         videoDuration: progress[currentKey]?.videoDuration || 0,
       });
+      
+      // Use courseProgress from response if available
+      if (response.courseProgress) {
+        console.log('Course Progress (Feedback):', response.courseProgress);
+        setCourseProgress(response.courseProgress);
+        localStorage.setItem('courseProgress', JSON.stringify(response.courseProgress));
+      }
+      
       // Refetch progress from backend
       const progressArr = await getProgress();
       const progObj = {};
@@ -501,80 +540,9 @@ const Courses = () => {
     setSubmitting(false);
   };
 
-  // Check if all days in current level are completed
-  const allDaysCompleted =
-    typeof selectedLevel === 'number'
-      ? mockCourses
-          .find((l) => l.level === selectedLevel)
-          ?.days.every((d) => !!progress[getKey(selectedLevel, d.day)]?.completed)
-      : false;
 
-  // Check if test is passed for current level
-  const testPassed =
-    typeof selectedLevel === 'number' ? levelTest[selectedLevel]?.testPassed : false;
 
-  // Show warning if expired
-  const showThreeMonthWarning =
-    threeMonthExpiredLevel > 0 &&
-    typeof selectedLevel === 'number' &&
-    selectedLevel > threeMonthExpiredLevel;
 
-  // Reset progress handler
-  /**
-   *
-   */
-  const handleProfileReset = () => {
-    if (
-      window.confirm('Are you sure you want to reset all your progress? This cannot be undone.')
-    ) {
-      localStorage.removeItem('courseProgress');
-      localStorage.removeItem('levelTest');
-      window.location.reload();
-    }
-  };
-
-  /**
-   *
-   */
-  const handleAdminReset = () => {
-    if (window.confirm('Admin: Reset ALL progress for this user? This cannot be undone.')) {
-      localStorage.removeItem('courseProgress');
-      localStorage.removeItem('levelTest');
-      window.location.reload();
-    }
-  };
-
-  // Fetch all users when admin dialog opens
-  // Fetch selected user's progress/levelTest
-  // Helper functions for admin user analytics
-  /**
-   *
-   * @param userId
-   */
-  async function getProgressForUser(userId: string) {
-    const res = await fetch(`/api/progress/user/${userId}`, { headers: buildHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch progress');
-    return res.json();
-  }
-  /**
-   *
-   * @param userId
-   */
-  async function getLevelTestsForUser(userId: string) {
-    const res = await fetch(`/api/levelTest/user/${userId}`, { headers: buildHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch level tests');
-    return res.json();
-  }
-  /**
-   *
-   * @param extra
-   */
-  function buildHeaders(extra: Record<string, string> = {}) {
-    const token = localStorage.getItem('token');
-    const headers: Record<string, string> = { ...extra };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    return headers;
-  }
 
   // Helper to determine pass/fail
   /**
@@ -836,7 +804,7 @@ const Courses = () => {
                       <Typography variant="h4" sx={{ color: '#de6b2f', fontWeight: 700, mb: 2, whiteSpace: 'pre-line' }}>
                         Course content is only available\n
                         {(() => {
-                          function formatHour(hour) {
+                          function formatHour(hour: number) {
                             const h = hour % 24;
                             const ampm = h < 12 ? 'AM' : 'PM';
                             const display = h % 12 === 0 ? 12 : h % 12;

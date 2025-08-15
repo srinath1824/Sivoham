@@ -68,7 +68,8 @@ export async function checkMobileRegistered(mobile: string) {
 export async function getProgress() {
   const res = await fetch(`${API_URL}/progress`, { headers: buildHeaders() });
   if (!res.ok) throw new Error('Failed to fetch progress');
-  return res.json();
+  const data = await res.json();
+  return data.progress || data; // Handle both response formats
 }
 
 /**

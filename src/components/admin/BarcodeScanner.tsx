@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography, Button, Alert, Paper, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { Event, Person, Cake, Work, School, CheckCircle, LocationOn, Group, CalendarToday } from '@mui/icons-material';
 import { markAttendance } from '../../services/api.ts';
+import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 import axios from 'axios';
 import jsQR from 'jsqr';
 
@@ -16,6 +17,7 @@ export default function BarcodeScanner() {
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [userDetailsDialog, setUserDetailsDialog] = useState<{ open: boolean; user: any | null }>({ open: false, user: null });
+  const [loading, setLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -234,16 +236,20 @@ export default function BarcodeScanner() {
   }, [selectedEvent]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchEvents() {
+    setLoading(true);
     try {
       const res = await axios.get('/api/events');
       setEvents(res.data);
     } catch (err) {
       setMessage('Failed to fetch events');
       setMessageType('error');
+    } finally {
+      setLoading(false);
     }
   }
 
   async function fetchEventRegistrations() {
+    setLoading(true);
     try {
       const res = await axios.get('/api/event-registrations/all?limit=1000', config);
       const registrations = res.data.registrations || res.data;
@@ -254,6 +260,8 @@ export default function BarcodeScanner() {
     } catch (err) {
       setMessage('Failed to fetch event registrations');
       setMessageType('error');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -281,7 +289,12 @@ export default function BarcodeScanner() {
         </Alert>
       )}
 
-      <Paper sx={{ p: { xs: 2, md: 3 } }}>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <JaiGurudevLoader />
+        </Box>
+      ) : (
+        <Paper sx={{ p: { xs: 2, md: 3 } }}>
         <Typography variant="h6" sx={{ mb: 2, fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
           Event Selection & Scanner
         </Typography>
@@ -468,6 +481,7 @@ export default function BarcodeScanner() {
           </Button>
         </Box>
       </Paper>
+      )}
 
       <Dialog open={userDetailsDialog.open} onClose={() => setUserDetailsDialog({ open: false, user: null })} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ 
