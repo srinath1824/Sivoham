@@ -9,7 +9,7 @@ export default function EventsManagement() {
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [editEvent, setEditEvent] = useState<any>(null);
-  const [editForm, setEditForm] = useState({ name: '', date: '', description: '', venue: '', location: '', eventType: 'unlimited' });
+  const [editForm, setEditForm] = useState({ name: '', date: '', startTime: '', endTime: '', description: '', venue: '', location: '', eventType: 'unlimited', registrationDeadline: '' });
   const [isAddMode, setIsAddMode] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -37,10 +37,13 @@ export default function EventsManagement() {
       setEditForm({
         name: event.name || '',
         date: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
+        startTime: event.startTime || '',
+        endTime: event.endTime || '',
         description: event.description || '',
         venue: event.venue || '',
         location: event.location || '',
-        eventType: event.eventType || 'unlimited'
+        eventType: event.eventType || 'unlimited',
+        registrationDeadline: event.registrationDeadline ? new Date(event.registrationDeadline).toISOString().split('T')[0] : ''
       });
     }
   }
@@ -68,7 +71,7 @@ export default function EventsManagement() {
   function handleAddNew() {
     setIsAddMode(true);
     setEditEvent({ _id: null });
-    setEditForm({ name: '', date: '', description: '', venue: '', location: '', eventType: 'unlimited' });
+    setEditForm({ name: '', date: '', startTime: '', endTime: '', description: '', venue: '', location: '', eventType: 'unlimited', registrationDeadline: '' });
   }
 
   async function handleDelete(eventId: string) {
@@ -209,6 +212,28 @@ export default function EventsManagement() {
               InputLabelProps={{ shrink: true }}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                fullWidth
+                type="time"
+                label="Start Time"
+                value={editForm.startTime}
+                onChange={(e) => setEditForm(prev => ({ ...prev, startTime: e.target.value }))}
+                InputLabelProps={{ shrink: true }}
+                helperText="Optional"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+              <TextField
+                fullWidth
+                type="time"
+                label="End Time"
+                value={editForm.endTime}
+                onChange={(e) => setEditForm(prev => ({ ...prev, endTime: e.target.value }))}
+                InputLabelProps={{ shrink: true }}
+                helperText="Optional"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+            </Box>
             <TextField
               fullWidth
               multiline
@@ -249,6 +274,16 @@ export default function EventsManagement() {
               <MenuItem value="unlimited">Unlimited (No Approval Required)</MenuItem>
               <MenuItem value="limited">Limited (Approval Required)</MenuItem>
             </TextField>
+            <TextField
+              fullWidth
+              type="date"
+              label="Registration Deadline (Optional)"
+              value={editForm.registrationDeadline}
+              onChange={(e) => setEditForm(prev => ({ ...prev, registrationDeadline: e.target.value }))}
+              InputLabelProps={{ shrink: true }}
+              helperText="Leave empty for no deadline"
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3, bgcolor: '#fff7f0', gap: 1 }}>

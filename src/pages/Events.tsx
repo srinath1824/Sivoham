@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Divider, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, RadioGroup, FormControlLabel, Radio, Alert, Tabs, Tab } from '@mui/material';
+import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Divider, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, RadioGroup, FormControlLabel, Radio, Alert, Tabs, Tab, Snackbar } from '@mui/material';
 import { PAST_EVENTS, UPCOMING_EVENTS } from '../config/constants.ts';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,11 +9,14 @@ interface EventType {
   _id: string;
   name: string;
   date: string;
+  startTime?: string;
+  endTime?: string;
   description: string;
   venue: string;
   location: string;
   imageUrl?: string;
   eventType: string;
+  registrationDeadline?: string;
 }
 
 interface RegistrationType {
@@ -35,10 +38,15 @@ interface RegistrationType {
   forWhom: string;
 }
 
-const formatDateTime = (dateStr: string) => {
+const formatDateTime = (dateStr: string, startTime?: string, endTime?: string) => {
   const date = new Date(dateStr);
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }) +
-    ' ' + date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  const dateFormatted = date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+  if (startTime && endTime) {
+    return `${dateFormatted} (${startTime} - ${endTime})`;
+  } else if (startTime) {
+    return `${dateFormatted} at ${startTime}`;
+  }
+  return dateFormatted;
 };
 
 export default function Events() {
@@ -70,6 +78,7 @@ export default function Events() {
   const [tab, setTab] = useState(0);
   const [barcodeDialog, setBarcodeDialog] = useState<{ open: boolean; regId: string; qrCode: string }>({ open: false, regId: '', qrCode: '' });
   const [detailsDialog, setDetailsDialog] = useState<{ open: boolean; registration: RegistrationType | null }>({ open: false, registration: null });
+  const [toastOpen, setToastOpen] = useState(false);
 
   const SKS_LEVELS = [
     'Level-5.1', 'Level-5', 'Level-4', 'Level-3', 'Level-2', 'Level-1', 'Not done any Level'
@@ -129,15 +138,22 @@ export default function Events() {
   }, [user && user._id, token, user && user.isSelected]);
 
   const handleRegisterClick = (event: EventType) => {
+    // Check if user already registered for this event
+    const alreadyRegistered = registeredEvents.some(reg => reg.eventId?._id === event._id);
+    if (alreadyRegistered) {
+      setToastOpen(true);
+      return;
+    }
+    
     setRegisterEvent(event);
     setRegisterOpen(true);
     setRegisterData({
-      fullName: '',
-      mobile: '',
-      gender: '',
-      age: '',
-      profession: '',
-      address: '',
+      fullName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
+      mobile: user?.mobile || '',
+      gender: user?.gender || '',
+      age: user?.age?.toString() || '',
+      profession: user?.profession || '',
+      address: user?.address || user?.place || '',
       sksLevel: '',
       sksMiracle: '',
       otherDetails: '',
@@ -152,7 +168,36 @@ export default function Events() {
   };
 
   const handleRegisterChange = (e: any) => {
-    setRegisterData({ ...registerData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'forWhom') {
+      if (value === 'self') {
+        // Auto-populate with user data
+        setRegisterData({
+          ...registerData,
+          [name]: value,
+          fullName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
+          mobile: user?.mobile || '',
+          gender: user?.gender || '',
+          age: user?.age?.toString() || '',
+          profession: user?.profession || '',
+          address: user?.address || user?.place || '',
+        });
+      } else {
+        // Clear fields for someone else
+        setRegisterData({
+          ...registerData,
+          [name]: value,
+          fullName: '',
+          mobile: '',
+          gender: '',
+          age: '',
+          profession: '',
+          address: '',
+        });
+      }
+    } else {
+      setRegisterData({ ...registerData, [name]: value });
+    }
   };
 
   const validateRegister = () => {
@@ -251,26 +296,43 @@ export default function Events() {
                       )}
                       {upcomingEvents.map((event: EventType) => (
                         <TableRow key={event._id}>
-                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{formatDateTime(event.date)}</TableCell>
+                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{formatDateTime(event.date, event.startTime, event.endTime)}</TableCell>
                           <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif' }}>{event.name}</TableCell>
                           <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.description}</TableCell>
                           <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.venue}</TableCell>
                           <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.location}</TableCell>
                           <TableCell>
-                            <Button
-                              variant="contained"
-                              color="primary"
-                              onClick={() => {
-                                if (!user) {
-                                  alert('Please log in to register for events.');
-                                  return;
-                                }
-                                handleRegisterClick(event);
-                              }}
-                              sx={{ fontWeight: 700, fontFamily: 'Lora, serif', background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)', borderRadius: 2 }}
-                            >
-                              Register
-                            </Button>
+                            {(() => {
+                              const isRegistrationClosed = event.registrationDeadline && new Date() > new Date(event.registrationDeadline);
+                              if (isRegistrationClosed) {
+                                return (
+                                  <Box sx={{ textAlign: 'center' }}>
+                                    <Typography sx={{ color: 'red', fontWeight: 600, fontSize: '0.9rem', mb: 0.5 }}>
+                                      Registrations Closed
+                                    </Typography>
+                                    <Typography sx={{ color: '#666', fontSize: '0.8rem' }}>
+                                      For queries reach admin
+                                    </Typography>
+                                  </Box>
+                                );
+                              }
+                              return (
+                                <Button
+                                  variant="contained"
+                                  color="primary"
+                                  onClick={() => {
+                                    if (!user) {
+                                      alert('Please log in to register for events.');
+                                      return;
+                                    }
+                                    handleRegisterClick(event);
+                                  }}
+                                  sx={{ fontWeight: 700, fontFamily: 'Lora, serif', background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)', borderRadius: 2 }}
+                                >
+                                  Register
+                                </Button>
+                              );
+                            })()}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -313,7 +375,7 @@ export default function Events() {
                       )}
                       {pastEvents.map((event: EventType) => (
                         <TableRow key={event._id}>
-                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.date ? formatDateTime(event.date) : '-'}</TableCell>
+                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.date ? formatDateTime(event.date, event.startTime, event.endTime) : '-'}</TableCell>
                           <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif' }}>{event.name}</TableCell>
                           <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.description}</TableCell>
                           <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.venue}</TableCell>
@@ -353,7 +415,7 @@ export default function Events() {
                     {registeredEvents.map((reg: RegistrationType) => (
                       <TableRow key={reg._id}>
                         <TableCell sx={{ fontWeight: 600, color: '#de6b2f', fontFamily: 'Lora, serif' }}>{reg.eventId?.name}</TableCell>
-                        <TableCell sx={{ fontFamily: 'Lora, serif' }}>{reg.eventId?.date ? formatDateTime(reg.eventId.date) : '-'}</TableCell>
+                        <TableCell sx={{ fontFamily: 'Lora, serif' }}>{reg.eventId?.date ? formatDateTime(reg.eventId.date, reg.eventId.startTime, reg.eventId.endTime) : '-'}</TableCell>
                         <TableCell sx={{ fontFamily: 'Lora, serif' }}>{reg.eventId?.venue}</TableCell>
                         <TableCell sx={{ fontFamily: 'Lora, serif' }}>{reg.eventId?.location}</TableCell>
                         <TableCell>
@@ -410,16 +472,20 @@ export default function Events() {
           <DialogTitle>Event Registration</DialogTitle>
           <DialogContent>
             {registerError && <Alert severity="error" sx={{ mb: 2 }}>{registerError}</Alert>}
-            <TextField label="Full Name" name="fullName" value={registerData.fullName} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required />
-            <TextField label="Mobile" name="mobile" value={registerData.mobile} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required inputProps={{ maxLength: 10 }} />
-            <TextField label="Gender" name="gender" value={registerData.gender} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required select>
+            <RadioGroup row name="forWhom" value={registerData.forWhom} onChange={handleRegisterChange} sx={{ mb: 3, justifyContent: 'center' }}>
+              <FormControlLabel value="self" control={<Radio />} label="Registering for Myself" />
+              <FormControlLabel value="other" control={<Radio />} label="Registering for Someone Else" />
+            </RadioGroup>
+            <TextField label="Full Name" name="fullName" value={registerData.fullName} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required disabled={registerData.forWhom === 'self'} />
+            <TextField label="Mobile" name="mobile" value={registerData.mobile} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required inputProps={{ maxLength: 10 }} disabled={registerData.forWhom === 'self'} />
+            <TextField label="Gender" name="gender" value={registerData.gender} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required select disabled={registerData.forWhom === 'self'}>
               <MenuItem value="Male">Male</MenuItem>
               <MenuItem value="Female">Female</MenuItem>
               <MenuItem value="Other">Other</MenuItem>
             </TextField>
-            <TextField label="Age" name="age" value={registerData.age} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required type="number" inputProps={{ min: 1, max: 120 }} />
-            <TextField label="Profession (optional)" name="profession" value={registerData.profession} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} />
-            <TextField label="Address" name="address" value={registerData.address} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required />
+            <TextField label="Age" name="age" value={registerData.age} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required type="number" inputProps={{ min: 1, max: 120 }} disabled={registerData.forWhom === 'self'} />
+            <TextField label="Profession (optional)" name="profession" value={registerData.profession} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} disabled={registerData.forWhom === 'self'} />
+            <TextField label="Address" name="address" value={registerData.address} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required disabled={registerData.forWhom === 'self'} />
             <TextField label="Which level have you completed in SKS" name="sksLevel" value={registerData.sksLevel} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required select>
               {SKS_LEVELS.map(level => <MenuItem key={level} value={level}>{level}</MenuItem>)}
             </TextField>
@@ -427,10 +493,6 @@ export default function Events() {
               {SKS_MIRACLES.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
             </TextField>
             <TextField label="Any other details" name="otherDetails" value={registerData.otherDetails} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} multiline minRows={2} />
-            <RadioGroup row name="forWhom" value={registerData.forWhom} onChange={handleRegisterChange} sx={{ mb: 2 }}>
-              <FormControlLabel value="self" control={<Radio />} label="Registering for Myself" />
-              <FormControlLabel value="other" control={<Radio />} label="Registering for Someone Else" />
-            </RadioGroup>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleRegisterClose} color="inherit">Cancel</Button>
@@ -498,6 +560,23 @@ export default function Events() {
             </Button>
           </DialogActions>
         </Dialog>
+
+        <Snackbar
+          open={toastOpen}
+          autoHideDuration={4000}
+          onClose={() => setToastOpen(false)}
+          message="You have already registered for this event"
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          sx={{
+            '& .MuiSnackbarContent-root': {
+              backgroundColor: '#de6b2f',
+              color: 'white',
+              fontFamily: 'Lora, serif',
+              fontWeight: 600,
+              borderRadius: 2
+            }
+          }}
+        />
       </Box>
     </main>
   );

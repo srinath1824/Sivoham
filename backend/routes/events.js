@@ -28,17 +28,20 @@ router.get('/', async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
-    const { name, date, description, venue, location, eventType } = req.body;
+    const { name, date, startTime, endTime, description, venue, location, eventType, registrationDeadline } = req.body;
     if (!name || !date || !description || !venue || !location) {
       return res.status(400).json({ error: 'All fields required' });
     }
     const event = await Event.create({ 
       name, 
       date, 
+      startTime: startTime || null,
+      endTime: endTime || null,
       description, 
       venue, 
       location, 
-      eventType: eventType || 'open' 
+      eventType: eventType || 'open',
+      registrationDeadline: registrationDeadline || null
     });
     res.json(event);
   } catch (error) {
@@ -50,10 +53,10 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
-    const { name, date, description, venue, location, eventType, messageTemplate } = req.body;
+    const { name, date, startTime, endTime, description, venue, location, eventType, messageTemplate, registrationDeadline } = req.body;
     const event = await Event.findByIdAndUpdate(
       req.params.id,
-      { name, date, description, venue, location, eventType, messageTemplate },
+      { name, date, startTime: startTime || null, endTime: endTime || null, description, venue, location, eventType, messageTemplate, registrationDeadline: registrationDeadline || null },
       { new: true }
     );
     if (!event) return res.status(404).json({ error: 'Event not found' });

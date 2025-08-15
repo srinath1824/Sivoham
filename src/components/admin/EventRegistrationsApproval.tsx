@@ -40,7 +40,7 @@ export default function EventRegistrationsApproval() {
   async function fetchEvents() {
     try {
       const res = await axios.get('/api/events');
-      setEvents(res.data.filter((event: any) => event.eventType === 'limited'));
+      setEvents(res.data);
     } catch (err: any) {
       console.error('Failed to fetch events:', err);
     }

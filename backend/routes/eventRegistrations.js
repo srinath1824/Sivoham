@@ -22,6 +22,11 @@ router.post('/', async (req, res) => {
     }
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ error: 'Event not found' });
+    
+    // Check if registration deadline has passed
+    if (event.registrationDeadline && new Date() > new Date(event.registrationDeadline)) {
+      return res.status(400).json({ error: 'Registration deadline has passed for this event' });
+    }
     // Generate registrationId: SKS-<DAY><MONTH><YEAR><6digit>
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
