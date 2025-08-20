@@ -21,41 +21,9 @@ export default function JaiGurudevLoader({ size = 'medium' }: JaiGurudevLoaderPr
         justifyContent: 'center',
         gap: sizeConfig[size].spacing,
         py: sizeConfig[size].spacing,
-        px: 3,
-        // background: 'rgba(255, 247, 240, 0.8)',
-        // borderRadius: 3,
-        // backdropFilter: 'blur(10px)',
-        // boxShadow: '0 4px 20px rgba(222,107,47,0.1)'
+        px: 3
       }}
     >
-      {/* Circular Background with Prayer Hands */}
-      {/* <Box
-        sx={{
-          width: sizeConfig[size].circleSize,
-          height: sizeConfig[size].circleSize,
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #fff7f0 0%, #ffeee0 100%)',
-          border: '3px solid rgba(222,107,47,0.2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-          boxShadow: '0 8px 32px rgba(222,107,47,0.15)'
-        }}
-      >
-        <Box
-          sx={{
-            fontSize: sizeConfig[size].emojiSize,
-            animation: 'bounce 1.5s ease-in-out infinite',
-            '@keyframes bounce': {
-              '0%, 100%': { transform: 'translateY(0) scale(1)' },
-              '50%': { transform: 'translateY(-8px) scale(1.1)' }
-            }
-          }}
-        >
-          🙏
-        </Box>
-      </Box> */}
       
       {/* Text with Inline Animated Dots */}
       <Typography 

@@ -11,6 +11,8 @@ import { getUserProfile } from './services/api.ts';
 import Profile from './pages/Profile.tsx';
 import { PermissionProvider } from './contexts/PermissionContext.tsx';
 import EventScrollBanner from './components/EventScrollBanner.tsx';
+import ErrorBoundary from './components/ErrorBoundary.tsx';
+import NetworkError from './components/NetworkError.tsx';
 
 interface UserProfile {
   _id?: string;
@@ -62,9 +64,21 @@ function App({ navigate }: { navigate: any }) {
         setUser(profile);
         localStorage.setItem('user', JSON.stringify(profile));
       } catch (err) {
-        setUser(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        console.warn('Failed to fetch user profile:', err);
+        // Don't clear user data on network errors, only on auth errors
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+          try {
+            setUser(JSON.parse(savedUser));
+          } catch {
+            setUser(null);
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+          }
+        } else {
+          setUser(null);
+          localStorage.removeItem('token');
+        }
       }
       setLoadingUser(false);
     }
@@ -81,9 +95,16 @@ function App({ navigate }: { navigate: any }) {
       setUser(profile);
       localStorage.setItem('user', JSON.stringify(profile));
     } catch (err) {
-      setUser(null);
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      console.warn('Failed to fetch user profile after login:', err);
+      // Use the provided user data as fallback
+      if (u) {
+        setUser(u);
+        localStorage.setItem('user', JSON.stringify(u));
+      } else {
+        setUser(null);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
     }
     setLoadingUser(false);
     if (navigate) navigate('/');
@@ -111,7 +132,7 @@ function App({ navigate }: { navigate: any }) {
   }
 
   return (
-    <ErrorBoundary fallback={<ErrorFallback />}>
+    <ErrorBoundary>
       <div className="app-container">
         <Navbar onLoginClick={handleLoginClick} user={user} onLogoutClick={handleLogout} />
         <EventScrollBanner />
@@ -120,15 +141,19 @@ function App({ navigate }: { navigate: any }) {
         <Route path="/" element={<Home />} />
         <Route path="/join" element={<Join handleLogin={handleLogin} />} />
         <Route path="/events" element={
-          <Suspense fallback={<SectionLoader />}>
-            <Events />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<SectionLoader />}>
+              <Events />
+            </Suspense>
+          </ErrorBoundary>
         } />
         <Route path="/courses" element={
           user ? (
-            <Suspense fallback={<SectionLoader />}>
-              <Courses />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<SectionLoader />}>
+                <Courses />
+              </Suspense>
+            </ErrorBoundary>
           ) : (
             <LoginRequiredMessage onLoginClick={handleLoginClick} />
           )
@@ -144,9 +169,11 @@ function App({ navigate }: { navigate: any }) {
         } /> */}
         <Route path="/admin" element={
           user && user.isAdmin ? (
-            <PermissionProvider>
-              <AdminRequests />
-            </PermissionProvider>
+            <ErrorBoundary>
+              <PermissionProvider>
+                <AdminRequests />
+              </PermissionProvider>
+            </ErrorBoundary>
           ) : (
             <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fff7f0', borderRadius: 16, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', margin: '2rem auto', maxWidth: 480, padding: '2.5rem 1.5rem' }}>
               <span style={{ fontSize: 54, color: '#de6b2f', marginBottom: 16 }}>⛔</span>
@@ -157,7 +184,11 @@ function App({ navigate }: { navigate: any }) {
             </div>
           )
         } />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile" element={
+          <ErrorBoundary>
+            <Profile />
+          </ErrorBoundary>
+        } />
         </Routes>
         <Footer />
       </div>
@@ -208,74 +239,7 @@ function SectionLoader() {
   return <JaiGurudevLoader size="medium" />;
 }
 
-/**
- * Error boundary fallback component
- */
-class ErrorBoundary extends React.Component<{ children: React.ReactNode; fallback?: React.ReactNode }, { hasError: boolean; error: any }> {
-  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
 
-  static getDerivedStateFromError(error: any) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: any, errorInfo: any) {
-    console.error('Error boundary caught an error:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback || <ErrorFallback />;
-    }
-    return this.props.children;
-  }
-}
-
-/**
- * Error fallback component
- */
-function ErrorFallback() {
-  return (
-    <div style={{ 
-      minHeight: '60vh', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      background: '#fff7f0', 
-      borderRadius: 16, 
-      boxShadow: '0 2px 12px rgba(222,107,47,0.07)', 
-      margin: '2rem auto', 
-      maxWidth: 480, 
-      padding: '2.5rem 1.5rem' 
-    }}>
-      <span style={{ fontSize: 54, color: '#de6b2f', marginBottom: 16 }}>⚠️</span>
-      <h2 style={{ color: '#de6b2f', fontFamily: 'Lora, serif', fontWeight: 700, marginBottom: 12, fontSize: '2rem', textAlign: 'center' }}>Something went wrong</h2>
-      <p style={{ color: '#1a2341', fontFamily: 'Lora, serif', fontSize: '1.15rem', textAlign: 'center', marginBottom: 24 }}>
-        We encountered an unexpected error. Please refresh the page to try again.
-      </p>
-      <button
-        style={{
-          background: '#de6b2f',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 8,
-          padding: '10px 32px',
-          fontFamily: 'Lora, serif',
-          fontWeight: 700,
-          fontSize: '1.1rem',
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(222,107,47,0.08)'
-        }}
-        onClick={() => window.location.reload()}
-      >
-        Refresh Page
-      </button>
-    </div>
-  );
-}
 
 /**
  * Home page component (placeholder).

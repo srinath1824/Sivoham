@@ -9,6 +9,7 @@ import AdminUsersTab from '../components/admin/AdminUsersTab.tsx';
 import BarcodeScanner from '../components/admin/BarcodeScanner.tsx';
 import RoleManagement from '../components/admin/RoleManagement.tsx';
 import EventPermissions from '../components/admin/EventPermissions.tsx';
+import InProgressTab from '../components/admin/InProgressTab.tsx';
 
 export default function AdminRequests() {
   const [tab, setTab] = useState(4); // Default to Users tab
@@ -32,6 +33,8 @@ export default function AdminRequests() {
         {tab === 5 && <BarcodeScanner />}
         {tab === 6 && <RoleManagement />}
         {tab === 7 && <EventPermissions />}
+        {tab === 8 && <InProgressTab title="Merchandise Management" description="Manage spiritual merchandise, books, and sacred items. Track inventory, orders, and deliveries for devotees." />}
+        {tab === 9 && <InProgressTab title="Sevaks Management" description="Coordinate volunteer activities and seva opportunities. Manage sevak registrations, assignments, and contributions to the spiritual community." />}
       </Box>
     </Box>
   );

@@ -34,11 +34,12 @@ export const STORAGE_KEY = 'courseProgress';
 export const INITIAL_LEVEL_TEST: Record<
   number,
   { testPassed: boolean; firstCompletedAt?: number }
-> = {
+> & { meditationTestPassed?: boolean } = {
   1: { testPassed: false },
   2: { testPassed: false },
   3: { testPassed: false },
   4: { testPassed: false },
+  meditationTestPassed: false,
 };
 
 /**

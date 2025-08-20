@@ -8,6 +8,8 @@ import GroupIcon from '@mui/icons-material/Group';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import { usePermissions } from '../../contexts/PermissionContext.tsx';
 import { useState, useEffect } from 'react';
 
@@ -32,6 +34,11 @@ const eventTabs = [
   { label: 'Barcode Scanner', icon: <QrCodeScannerIcon />, index: 5 },
 ];
 
+const otherTabs = [
+  { label: 'Merchandise', icon: <ShoppingCartIcon />, index: 8 },
+  { label: 'Sevaks', icon: <VolunteerActivismIcon />, index: 9 },
+];
+
 export default function AdminSidebar({ tab, setTab, drawerOpen, setDrawerOpen }: AdminSidebarProps) {
   const { isSuperAdmin } = usePermissions();
   const [eventPermissions, setEventPermissions] = useState<any>(null);
@@ -46,6 +53,9 @@ export default function AdminSidebar({ tab, setTab, drawerOpen, setDrawerOpen }:
   const userTabsFiltered = userTabs.filter(tabItem => 
     (tabItem.index !== 6 && tabItem.index !== 7) || isSuper
   );
+  
+  // Other tabs are available to all admins
+  const otherTabsFiltered = otherTabs;
   
   const eventTabsFiltered = eventTabs.filter(tabItem => {
     if (isSuperAdmin()) return true;
@@ -97,6 +107,20 @@ export default function AdminSidebar({ tab, setTab, drawerOpen, setDrawerOpen }:
               ))}
             </>
           )}
+          
+          <Divider sx={{ my: 1 }} />
+          
+          <Typography variant="subtitle2" sx={{ px: 2, py: 1, fontWeight: 600, color: '#b45309', fontSize: '0.9rem' }}>
+            OTHER
+          </Typography>
+          {otherTabs.map((tabItem) => (
+            <ListItem key={tabItem.label} disablePadding>
+              <ListItemButton selected={tab === tabItem.index} onClick={() => setTab(tabItem.index)}>
+                <ListItemIcon>{tabItem.icon}</ListItemIcon>
+                <ListItemText primary={tabItem.label} />
+              </ListItemButton>
+            </ListItem>
+          ))}
         </List>
       </Box>
 
@@ -135,6 +159,20 @@ export default function AdminSidebar({ tab, setTab, drawerOpen, setDrawerOpen }:
                 ))}
               </>
             )}
+            
+            <Divider sx={{ my: 1 }} />
+            
+            <Typography variant="subtitle2" sx={{ px: 2, py: 1, fontWeight: 600, color: '#b45309', fontSize: '0.9rem' }}>
+              OTHER
+            </Typography>
+            {otherTabs.map((tabItem) => (
+              <ListItem key={tabItem.label} disablePadding>
+                <ListItemButton selected={tab === tabItem.index} onClick={() => { setTab(tabItem.index); setDrawerOpen(false); }}>
+                  <ListItemIcon>{tabItem.icon}</ListItemIcon>
+                  <ListItemText primary={tabItem.label} />
+                </ListItemButton>
+              </ListItem>
+            ))}
           </List>
         </Box>
       </Drawer>

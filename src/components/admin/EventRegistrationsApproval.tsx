@@ -145,6 +145,10 @@ export default function EventRegistrationsApproval() {
       // Create canvas to combine QR code with user details
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        alert('Canvas not supported');
+        return;
+      }
       const img = new Image();
       
       img.onload = async () => {
@@ -358,14 +362,13 @@ Registrations will start by 8am
                   width: 24, 
                   height: 24, 
                   borderRadius: '50%', 
-                  background: 'linear-gradient(135deg, #de6b2f 0%, #b45309 100%)',
+                  background: '#25D366',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'white',
-                  fontSize: '0.8rem'
+                  color: 'white'
                 }}>
-                  💬
+                  <WhatsAppIcon sx={{ fontSize: '0.9rem' }} />
                 </Box>
                 <Typography variant="body1" sx={{ fontFamily: 'Lora, serif', color: '#de6b2f', fontWeight: 700 }}>
                   WhatsApp Template
@@ -488,6 +491,10 @@ Registrations will start by 8am
                             const qrCodeDataURL = await QRCode.toDataURL(reg.registrationId);
                             const canvas = document.createElement('canvas');
                             const ctx = canvas.getContext('2d');
+                            if (!ctx) {
+                              alert('Canvas not supported');
+                              return;
+                            }
                             const qrImg = new Image();
                             
                             qrImg.onload = async () => {

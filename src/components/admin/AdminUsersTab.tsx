@@ -257,14 +257,13 @@ export default function AdminUsersTab() {
                   width: 24, 
                   height: 24, 
                   borderRadius: '50%', 
-                  background: 'linear-gradient(135deg, #de6b2f 0%, #b45309 100%)',
+                  background: '#25D366',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'white',
-                  fontSize: '0.8rem'
+                  color: 'white'
                 }}>
-                  💬
+                  <WhatsAppIcon sx={{ fontSize: '0.9rem' }} />
                 </Box>
                 <Typography variant="body1" sx={{ fontFamily: 'Lora, serif', color: '#de6b2f', fontWeight: 700 }}>
                   WhatsApp Template

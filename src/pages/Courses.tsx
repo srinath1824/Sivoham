@@ -741,13 +741,6 @@ const Courses = () => {
                     </span>
                   </li>
                   <li className="level5-info-item">
-                    <span className="level5-info-icon secondary">🌟</span>
-                    <span>
-                      <b>Only sadhaks selected by Guruji</b> will be invited to attend Level 5.
-                      Selection is based on dedication and progress.
-                    </span>
-                  </li>
-                  <li className="level5-info-item">
                     <span className="level5-info-icon tertiary">📲</span>
                     <span>
                       <b>Invitations will be sent via WhatsApp</b> to selected sadhaks. Please
@@ -755,10 +748,17 @@ const Courses = () => {
                     </span>
                   </li>
                   <li className="level5-info-item">
+                    <span className="level5-info-icon secondary">🌟</span>
+                    <span>
+                      <b>Only sadhaks selected by Guruji</b> will be invited to attend Level 5.
+                      Selection is based on dedication and progress.
+                    </span>
+                  </li>
+                  <li className="level5-info-item">
                     <span className="level5-info-icon primary">📝</span>
                     <span>
                       <b>Apply for Sakthipatham</b> only after you have successfully completed Level
-                      5.
+                      5 atleast once.
                     </span>
                   </li>
                   <li className="level5-info-item">
@@ -789,13 +789,9 @@ const Courses = () => {
                   fontFamily: 'Lora, serif',
                 }}
               >
-                For any questions or clarifications, please contact the Ashram administration.
+                For any questions or clarifications, please contact the Ashram administration.<br/>
+                📱 WhatsApp: +91 78010 46111 | 📧 Email: sivakundalini@gmail.com
               </Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                <button className="level5-apply-button">
-                  Apply
-                </button>
-              </Box>
             </Box>
           ) : (
             <>

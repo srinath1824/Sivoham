@@ -1,6 +1,27 @@
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 /**
+ * Check if we're in offline mode or have network issues
+ */
+function isNetworkError(error: any): boolean {
+  return !navigator.onLine || 
+         error.name === 'NetworkError' || 
+         error.message?.includes('fetch') ||
+         error.message?.includes('network') ||
+         error.code === 'NETWORK_ERROR';
+}
+
+/**
+ * Handle API errors gracefully
+ */
+function handleApiError(error: any, fallbackMessage: string) {
+  if (isNetworkError(error)) {
+    throw new Error('Network connection failed. Please check your internet connection and try again.');
+  }
+  throw new Error(error.message || fallbackMessage);
+}
+
+/**
  *
  */
 function getToken() {
@@ -25,13 +46,20 @@ function buildHeaders(extra: Record<string, string> = {}) {
  * @param otp
  */
 export async function login(mobile: string, otp: string) {
-  const res = await fetch(`${API_URL}/auth/login`, {
-    method: 'POST',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ mobile, otp }),
-  });
-  if (!res.ok) throw new Error((await res.json()).error || 'Login failed');
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: buildHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ mobile, otp }),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Login failed' }));
+      throw new Error(errorData.error || 'Login failed');
+    }
+    return res.json();
+  } catch (error: any) {
+    handleApiError(error, 'Login failed');
+  }
 }
 
 /**
@@ -39,13 +67,20 @@ export async function login(mobile: string, otp: string) {
  * @param userData
  */
 export async function register(userData: any) {
-  const res = await fetch(`${API_URL}/auth/register`, {
-    method: 'POST',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify(userData),
-  });
-  if (!res.ok) throw new Error((await res.json()).error || 'Registration failed');
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: buildHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(userData),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Registration failed' }));
+      throw new Error(errorData.error || 'Registration failed');
+    }
+    return res.json();
+  } catch (error: any) {
+    handleApiError(error, 'Registration failed');
+  }
 }
 
 /**
@@ -178,9 +213,16 @@ export async function updateUser(userId: string, data: any) {
  * Securely fetch the current user's profile from the backend
  */
 export async function getUserProfile() {
-  const res = await fetch(`${API_URL}/user/me/profile`, { headers: buildHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch user profile');
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/user/me/profile`, { headers: buildHeaders() });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Failed to fetch user profile' }));
+      throw new Error(errorData.error || 'Failed to fetch user profile');
+    }
+    return res.json();
+  } catch (error: any) {
+    handleApiError(error, 'Failed to fetch user profile');
+  }
 }
 
 /**
@@ -229,17 +271,11 @@ export async function bulkRejectUsers(userIds: string[]) {
  * @param data
  */
 export async function updateUserProfile(data: any) {
-  const token = localStorage.getItem("token");
-  const res = await fetch("/api/user/profile", {
-    method: "PUT", // or "PATCH" depending on your backend
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+  const res = await fetch(`${API_URL}/user/profile`, {
+    method: 'PUT',
+    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(data),
   });
-  if (!res.ok) {
-    throw new Error("Failed to update profile");
-  }
-  return await res.json();
+  if (!res.ok) throw new Error('Failed to update profile');
+  return res.json();
 }
