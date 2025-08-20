@@ -1,0 +1,142 @@
+{
+  "info": {
+    "name": "Sivoham Admin API",
+    "description": "API collection for Sivoham admin operations",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Set Super Admin",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/set-superadmin/9999999999",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "admin", "set-superadmin", "9999999999"]
+        },
+        "description": "Set user with mobile 9999999999 as super admin"
+      }
+    },
+    {
+      "name": "Get User Permissions",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/my-permissions",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "admin", "my-permissions"]
+        }
+      }
+    },
+    {
+      "name": "Get All Roles",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/roles",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "admin", "roles"]
+        }
+      }
+    },
+    {
+      "name": "Assign Admin Role",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"USER_ID_HERE\",\n  \"permissions\": {\n    \"users\": { \"view\": true, \"edit\": false, \"delete\": false },\n    \"events\": { \"view\": true, \"edit\": true, \"delete\": false },\n    \"courses\": { \"view\": true, \"edit\": false },\n    \"analytics\": { \"view\": true },\n    \"settings\": { \"view\": false, \"edit\": false }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/assign-role",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "admin", "assign-role"]
+        }
+      }
+    },
+    {
+      "name": "Assign Event Permissions",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"USER_ID_HERE\",\n  \"permissions\": {\n    \"eventsManagement\": true,\n    \"eventRegistrations\": false,\n    \"eventUsers\": true,\n    \"barcodeScanner\": false\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/assign-event-permissions",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "admin", "assign-event-permissions"]
+        }
+      }
+    },
+    {
+      "name": "Get Event Admins",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/event-admins",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "admin", "event-admins"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string"
+    }
+  ]
+}

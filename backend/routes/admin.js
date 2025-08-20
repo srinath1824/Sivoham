@@ -367,27 +367,244 @@ router.put('/users/:id/toggle-whatsapp', auth, async (req, res) => {
 // Delete user and all associated data
 router.delete('/users/:id', auth, async (req, res) => {
   try {
-    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+    if (req.user.role !== 'superadmin' && !req.user.permissions?.users?.delete) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
     
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
     
-    // Prevent deletion of admin users
-    if (user.isAdmin) {
-      return res.status(403).json({ error: 'Cannot delete admin users' });
+    // Prevent deletion of superadmin users
+    if (user.isSuperAdmin) {
+      return res.status(403).json({ error: 'Cannot delete super admin user' });
     }
     
     // Delete user and all associated data
     await User.findByIdAndDelete(req.params.id);
     
-    // Note: If you have other collections (Progress, EventRegistrations, etc.)
-    // that reference this user, you should delete those records here as well:
-    // await Progress.deleteMany({ userId: req.params.id });
-    // await EventRegistration.deleteMany({ userId: req.params.id });
-    
     res.json({ success: true, message: 'User and all associated data deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Failed to delete user' });
+  }
+});
+
+// Get all admin users and their roles
+router.get('/roles', auth, async (req, res) => {
+  try {
+    if (!req.user.isSuperAdmin) {
+      return res.status(403).json({ error: 'Super admin only' });
+    }
+    
+    const admins = await User.find({ 
+      role: { $in: ['admin', 'superadmin'] } 
+    }).select('firstName lastName mobile email role permissions assignedBy assignedAt').populate('assignedBy', 'firstName lastName');
+    
+    res.json(admins);
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to fetch roles' });
+  }
+});
+
+// Assign admin role with permissions
+router.post('/assign-role', auth, async (req, res) => {
+  try {
+    if (!req.user.isSuperAdmin) {
+      return res.status(403).json({ error: 'Super admin only' });
+    }
+    
+    const { userId, permissions } = req.body;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    user.role = 'admin';
+    user.isAdmin = true;
+    user.permissions = permissions;
+    user.assignedBy = req.user._id;
+    user.assignedAt = new Date();
+    
+    await user.save();
+    res.json({ success: true, message: 'Admin role assigned successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to assign role' });
+  }
+});
+
+// Update user permissions
+router.put('/update-permissions/:id', auth, async (req, res) => {
+  try {
+    if (!req.user.isSuperAdmin) {
+      return res.status(403).json({ error: 'Super admin only' });
+    }
+    
+    const { permissions } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    if (user.role === 'superadmin') {
+      return res.status(403).json({ error: 'Cannot modify superadmin permissions' });
+    }
+    
+    user.permissions = permissions;
+    await user.save();
+    
+    res.json({ success: true, message: 'Permissions updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to update permissions' });
+  }
+});
+
+// Revoke admin role
+router.delete('/revoke-role/:id', auth, async (req, res) => {
+  try {
+    if (!req.user.isSuperAdmin) {
+      return res.status(403).json({ error: 'Super admin only' });
+    }
+    
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    if (user.role === 'superadmin') {
+      return res.status(403).json({ error: 'Cannot revoke superadmin role' });
+    }
+    
+    user.role = 'user';
+    user.isAdmin = false;
+    user.permissions = undefined;
+    user.assignedBy = undefined;
+    user.assignedAt = undefined;
+    
+    await user.save();
+    res.json({ success: true, message: 'Admin role revoked successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to revoke role' });
+  }
+});
+
+// Get current user's permissions
+router.get('/my-permissions', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('role permissions eventPermissions isSuperAdmin');
+    res.json({ role: user.role, permissions: user.permissions, eventPermissions: user.eventPermissions, isSuperAdmin: user.isSuperAdmin });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to fetch permissions' });
+  }
+});
+
+// Set user as super admin (temporary endpoint for setup)
+router.post('/set-superadmin/:mobile', async (req, res) => {
+  try {
+    const user = await User.findOne({ mobile: req.params.mobile });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    user.isSuperAdmin = true;
+    user.isAdmin = true;
+    user.role = 'superadmin';
+    user.permissions = {
+      users: { view: true, edit: true, delete: true },
+      events: { view: true, edit: true, delete: true },
+      courses: { view: true, edit: true },
+      analytics: { view: true },
+      settings: { view: true, edit: true }
+    };
+    user.eventPermissions = {
+      eventsManagement: true,
+      eventRegistrations: true,
+      eventUsers: true,
+      barcodeScanner: true
+    };
+    await user.save();
+    
+    res.json({ success: true, message: `User ${user.mobile} set as super admin with all permissions` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Debug endpoint to check user data
+router.get('/check-user/:mobile', async (req, res) => {
+  try {
+    const user = await User.findOne({ mobile: req.params.mobile }).select('mobile isAdmin isSuperAdmin role permissions eventPermissions');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get all users with event permissions
+router.get('/event-admins', auth, async (req, res) => {
+  try {
+    if (!req.user.isSuperAdmin) {
+      return res.status(403).json({ error: 'Super admin only' });
+    }
+    
+    const eventAdmins = await User.find({ 
+      eventPermissions: { $exists: true, $ne: null }
+    }).select('firstName lastName mobile email eventPermissions');
+    
+    res.json(eventAdmins);
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to fetch event admins' });
+  }
+});
+
+// Assign event permissions
+router.post('/assign-event-permissions', auth, async (req, res) => {
+  try {
+    if (!req.user.isSuperAdmin) {
+      return res.status(403).json({ error: 'Super admin only' });
+    }
+    
+    const { userId, permissions } = req.body;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    user.eventPermissions = permissions;
+    await user.save();
+    
+    res.json({ success: true, message: 'Event permissions assigned successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to assign event permissions' });
+  }
+});
+
+// Update event permissions
+router.put('/update-event-permissions/:id', auth, async (req, res) => {
+  try {
+    if (!req.user.isSuperAdmin) {
+      return res.status(403).json({ error: 'Super admin only' });
+    }
+    
+    const { permissions } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    user.eventPermissions = permissions;
+    await user.save();
+    
+    res.json({ success: true, message: 'Event permissions updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to update event permissions' });
+  }
+});
+
+// Revoke event permissions
+router.delete('/revoke-event-permissions/:id', auth, async (req, res) => {
+  try {
+    if (!req.user.isSuperAdmin) {
+      return res.status(403).json({ error: 'Super admin only' });
+    }
+    
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    user.eventPermissions = undefined;
+    await user.save();
+    
+    res.json({ success: true, message: 'Event permissions revoked successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to revoke event permissions' });
   }
 });
 

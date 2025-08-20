@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, MenuItem, TablePagination } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, MenuItem, TablePagination, Switch, FormControlLabel } from '@mui/material';
 import AdminFilters from './AdminFilters.tsx';
 import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 
@@ -86,6 +86,18 @@ export default function EventsManagement() {
     }
   }
 
+  async function handleBannerToggle(eventId: string, showBanner: boolean) {
+    try {
+      await axios.patch(`/api/events/${eventId}/banner`, 
+        { showScrollBanner: showBanner },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
+      fetchEvents();
+    } catch (err) {
+      alert('Failed to update banner visibility');
+    }
+  }
+
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
       const eventName = event.name?.toLowerCase() || '';
@@ -152,17 +164,51 @@ export default function EventsManagement() {
             <TableRow sx={{ background: '#fff7f0' }}>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Name</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Date</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Status</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Description</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Banner</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredEvents.length === 0 && <TableRow><TableCell colSpan={4} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>No events found.</TableCell></TableRow>}
+            {filteredEvents.length === 0 && <TableRow><TableCell colSpan={6} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>No events found.</TableCell></TableRow>}
             {filteredEvents.map((event, idx) => (
               <TableRow key={event._id} hover sx={{ background: idx % 2 === 0 ? '#fff' : '#f9f4ee', '&:hover': { background: '#fff3e0' } }}>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333', fontWeight: 600 }}>{event.name}</TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{event.date ? new Date(event.date).toLocaleDateString() : ''}</TableCell>
+                <TableCell>
+                  <Typography
+                    sx={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      px: 1.5,
+                      py: 0.5,
+                      borderRadius: 1,
+                      display: 'inline-block',
+                      backgroundColor: new Date(event.date) > new Date() ? '#e8f5e8' : '#ffebee',
+                      color: new Date(event.date) > new Date() ? '#2e7d32' : '#c62828'
+                    }}
+                  >
+                    {new Date(event.date) > new Date() ? 'Upcoming' : 'Completed'}
+                  </Typography>
+                </TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#666' }}>{event.description}</TableCell>
+                <TableCell>
+                  <Switch
+                    checked={event.showScrollBanner || false}
+                    onChange={(e) => handleBannerToggle(event._id, e.target.checked)}
+                    disabled={new Date(event.date) <= new Date()}
+                    size="small"
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: '#de6b2f',
+                        '& + .MuiSwitch-track': {
+                          backgroundColor: '#de6b2f',
+                        },
+                      },
+                    }}
+                  />
+                </TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
                   <Button size="small" variant="outlined" onClick={() => handleEdit(event._id)} sx={{ mr: 1, fontSize: '0.8rem' }}>Edit</Button>
                   <Button size="small" color="error" variant="outlined" onClick={() => handleDelete(event._id)} sx={{ fontSize: '0.8rem' }}>Delete</Button>

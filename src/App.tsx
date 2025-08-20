@@ -9,6 +9,8 @@ import Join from './pages/Join.tsx';
 import AdminRequests from './pages/AdminRequests.tsx';
 import { getUserProfile } from './services/api.ts';
 import Profile from './pages/Profile.tsx';
+import { PermissionProvider } from './contexts/PermissionContext.tsx';
+import EventScrollBanner from './components/EventScrollBanner.tsx';
 
 interface UserProfile {
   _id?: string;
@@ -112,6 +114,7 @@ function App({ navigate }: { navigate: any }) {
     <ErrorBoundary fallback={<ErrorFallback />}>
       <div className="app-container">
         <Navbar onLoginClick={handleLoginClick} user={user} onLogoutClick={handleLogout} />
+        <EventScrollBanner />
         <LoginDialog open={loginOpen} onLoginSuccess={handleLogin} onClose={() => setLoginOpen(false)} />
         <Routes>
         <Route path="/" element={<Home />} />
@@ -141,7 +144,9 @@ function App({ navigate }: { navigate: any }) {
         } /> */}
         <Route path="/admin" element={
           user && user.isAdmin ? (
-            <AdminRequests />
+            <PermissionProvider>
+              <AdminRequests />
+            </PermissionProvider>
           ) : (
             <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fff7f0', borderRadius: 16, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', margin: '2rem auto', maxWidth: 480, padding: '2.5rem 1.5rem' }}>
               <span style={{ fontSize: 54, color: '#de6b2f', marginBottom: 16 }}>⛔</span>

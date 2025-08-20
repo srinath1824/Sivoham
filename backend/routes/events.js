@@ -1,6 +1,7 @@
 const express = require('express');
 const Event = require('../models/Event');
 const auth = require('../middleware/auth');
+const { checkEventPermission } = require('../middleware/eventPermissions');
 
 const router = express.Router();
 
@@ -24,10 +25,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Create event (admin only)
-router.post('/', auth, async (req, res) => {
+// Create event (events management permission required)
+router.post('/', auth, checkEventPermission('eventsManagement'), async (req, res) => {
   try {
-    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
     const { name, date, startTime, endTime, description, venue, location, eventType, registrationDeadline } = req.body;
     if (!name || !date || !description || !venue || !location) {
       return res.status(400).json({ error: 'All fields required' });
@@ -49,10 +49,9 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Update event (admin only)
-router.put('/:id', auth, async (req, res) => {
+// Update event (events management permission required)
+router.put('/:id', auth, checkEventPermission('eventsManagement'), async (req, res) => {
   try {
-    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
     const { name, date, startTime, endTime, description, venue, location, eventType, messageTemplate, registrationDeadline } = req.body;
     const event = await Event.findByIdAndUpdate(
       req.params.id,
@@ -66,13 +65,42 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// Delete event (admin only)
-router.delete('/:id', auth, async (req, res) => {
+// Delete event (events management permission required)
+router.delete('/:id', auth, checkEventPermission('eventsManagement'), async (req, res) => {
   try {
-    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
     const event = await Event.findByIdAndDelete(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found' });
     res.json({ success: true, message: 'Event deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get upcoming events for banner (public)
+router.get('/upcoming-banner', async (req, res) => {
+  try {
+    const today = new Date();
+    const events = await Event.find({
+      date: { $gte: today },
+      showScrollBanner: true
+    }).sort({ date: 1 }).limit(3);
+    res.json(events);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Toggle scroll banner visibility (events management permission required)
+router.patch('/:id/banner', auth, checkEventPermission('eventsManagement'), async (req, res) => {
+  try {
+    const { showScrollBanner } = req.body;
+    const event = await Event.findByIdAndUpdate(
+      req.params.id,
+      { showScrollBanner },
+      { new: true }
+    );
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    res.json(event);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

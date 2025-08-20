@@ -255,6 +255,25 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
               </button>
             ) : (
               <>
+                {/* Gurudev text for super admin */}
+                {user.isSuperAdmin && (
+                  <Typography
+                    sx={{
+                      fontFamily: 'cursive',
+                      fontWeight: 700,
+                      fontSize: '1.1rem',
+                      background: 'linear-gradient(45deg, #de6b2f 30%, #b45309 90%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                      letterSpacing: 0.5,
+                      mr: 1.5
+                    }}
+                  >
+                    🙏 Gurudev
+                  </Typography>
+                )}
                 {/* User avatar button with initials */}
                 <IconButton
                   onClick={e => setUserMenuAnchor(e.currentTarget)}

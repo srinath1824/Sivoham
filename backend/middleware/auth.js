@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-module.exports = function (req, res, next) {
+module.exports = async function (req, res, next) {
   try {
     // DEV ONLY: skip auth if SKIP_AUTH env or header is set (remove in production)
     if (process.env.NODE_ENV !== 'production' && (process.env.SKIP_AUTH === 'true' || req.headers['x-skip-auth'] === 'true')) {
@@ -28,7 +29,21 @@ module.exports = function (req, res, next) {
       return res.status(401).json({ error: 'Invalid token payload' });
     }
     
-    req.user = decoded;
+    // Fetch user from database to get latest permissions
+    const user = await User.findById(decoded.id).select('mobile isAdmin isSuperAdmin role permissions eventPermissions');
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    
+    req.user = {
+      ...decoded,
+      mobile: user.mobile,
+      isAdmin: user.isAdmin,
+      isSuperAdmin: user.isSuperAdmin,
+      role: user.role,
+      permissions: user.permissions,
+      eventPermissions: user.eventPermissions
+    };
     next();
   } catch (err) {
     console.error('Auth middleware error:', err.message);

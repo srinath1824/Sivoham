@@ -4,6 +4,8 @@ import { Visibility, Delete } from '@mui/icons-material';
 import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import AdminFilters from './AdminFilters.tsx';
+import PermissionGuard from './PermissionGuard.tsx';
+import { usePermissions } from '../../contexts/PermissionContext.tsx';
 import axios from 'axios';
 
 export default function AdminUsersTab() {
@@ -20,6 +22,7 @@ export default function AdminUsersTab() {
   const [watchTimeDialog, setWatchTimeDialog] = useState<{ open: boolean; user: any | null }>({ open: false, user: null });
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; user: any | null }>({ open: false, user: null });
   const [deleting, setDeleting] = useState(false);
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     async function fetchUsers() {
@@ -387,7 +390,7 @@ export default function AdminUsersTab() {
                     />
                   </TableCell>
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', textAlign: 'center' }}>
-                    {!u.isAdmin && (
+                    {!u.isAdmin && hasPermission('users', 'delete') && (
                       <IconButton
                         onClick={() => setDeleteDialog({ open: true, user: u })}
                         sx={{ 

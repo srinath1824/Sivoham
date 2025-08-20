@@ -3,6 +3,7 @@ const EventRegistration = require('../models/EventRegistration');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { checkEventPermission } = require('../middleware/eventPermissions');
 
 const router = express.Router();
 
@@ -73,9 +74,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/event-registrations (admin views limited event registrations for approval)
-router.get('/', auth, async (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+// GET /api/event-registrations (event registrations permission required)
+router.get('/', auth, checkEventPermission('eventRegistrations'), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
@@ -131,9 +131,8 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// GET /api/event-registrations/all (admin views all event registrations)
-router.get('/all', auth, async (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+// GET /api/event-registrations/all (event users permission required)
+router.get('/all', auth, checkEventPermission('eventUsers'), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
@@ -254,12 +253,9 @@ router.put('/:id/reject', auth, async (req, res) => {
   }
 });
 
-// PUT /api/event-registrations/:id/attend (mark attendance)
-router.put('/:id/attend', auth, async (req, res) => {
+// PUT /api/event-registrations/:id/attend (barcode scanner permission required)
+router.put('/:id/attend', auth, checkEventPermission('barcodeScanner'), async (req, res) => {
   try {
-    if (!req.user || !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
     
     const registrationId = req.params.id;
     if (!registrationId || typeof registrationId !== 'string' || registrationId.trim().length === 0) {
@@ -310,10 +306,9 @@ router.put('/:id/attend', auth, async (req, res) => {
   }
 });
 
-// POST /api/event-registrations/bulk-approve (admin bulk approves)
-router.post('/bulk-approve', auth, async (req, res) => {
+// POST /api/event-registrations/bulk-approve (event registrations permission required)
+router.post('/bulk-approve', auth, checkEventPermission('eventRegistrations'), async (req, res) => {
   try {
-    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
     const { registrationIds } = req.body;
     if (!registrationIds || !Array.isArray(registrationIds)) return res.status(400).json({ error: 'Invalid registrationIds' });
     
@@ -336,10 +331,9 @@ router.post('/bulk-approve', auth, async (req, res) => {
   }
 });
 
-// POST /api/event-registrations/bulk-reject (admin bulk rejects)
-router.post('/bulk-reject', auth, async (req, res) => {
+// POST /api/event-registrations/bulk-reject (event registrations permission required)
+router.post('/bulk-reject', auth, checkEventPermission('eventRegistrations'), async (req, res) => {
   try {
-    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
     const { registrationIds } = req.body;
     if (!registrationIds || !Array.isArray(registrationIds)) return res.status(400).json({ error: 'Invalid registrationIds' });
     
@@ -362,10 +356,9 @@ router.post('/bulk-reject', auth, async (req, res) => {
   }
 });
 
-// PUT /api/event-registrations/:id/toggle-whatsapp (toggle WhatsApp sent status)
-router.put('/:id/toggle-whatsapp', auth, async (req, res) => {
+// PUT /api/event-registrations/:id/toggle-whatsapp (event users permission required)
+router.put('/:id/toggle-whatsapp', auth, checkEventPermission('eventUsers'), async (req, res) => {
   try {
-    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
     
     // Get current value and toggle
     const user = await User.findOne({ 'events.eventsRegistered.registrationId': req.params.id });
@@ -395,9 +388,8 @@ router.put('/:id/toggle-whatsapp', auth, async (req, res) => {
   }
 });
 
-// GET /api/event-registrations/export (admin exports all filtered data to Excel)
-router.get('/export', auth, async (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+// GET /api/event-registrations/export (event users permission required)
+router.get('/export', auth, checkEventPermission('eventUsers'), async (req, res) => {
   try {
     const users = await User.find({ 'events.eventsRegistered.0': { $exists: true } }).populate('events.eventsRegistered.eventId');
     
@@ -452,8 +444,7 @@ router.get('/export', auth, async (req, res) => {
 });
 
 // Check what's actually in database
-router.get('/check-whatsapp/:id', auth, async (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+router.get('/check-whatsapp/:id', auth, checkEventPermission('eventUsers'), async (req, res) => {
   try {
     const user = await User.findOne({ 'events.eventsRegistered.registrationId': req.params.id });
     if (!user) return res.status(404).json({ error: 'User not found' });

@@ -39,7 +39,7 @@ router.delete('/:id', auth, async (req, res) => {
 
 // Get current user profile
 router.get('/me/profile', auth, async (req, res) => {
-  const user = await User.findById(req.user.id);
+  const user = await User.findById(req.user.id).select('+eventPermissions +isSuperAdmin');
   if (!user) return res.status(404).json({ error: 'User not found' });
   res.json(user);
 });

@@ -12,6 +12,7 @@ const EventSchema = new mongoose.Schema({
   eventType: { type: String, enum: ['limited', 'unlimited'], required: true, default: 'unlimited' },
   messageTemplate: { type: String, required: false },
   registrationDeadline: { type: Date, required: false },
+  showScrollBanner: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Event', EventSchema); 

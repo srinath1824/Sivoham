@@ -28,6 +28,23 @@ const UserSchema = new mongoose.Schema({
   comment: { type: String },
   isSelected: { type: Boolean, default: false },
   isAdmin: { type: Boolean, default: false },
+  isSuperAdmin: { type: Boolean, default: false },
+  role: { type: String, enum: ['user', 'admin', 'superadmin'], default: 'user' },
+  permissions: {
+    users: { view: { type: Boolean, default: false }, edit: { type: Boolean, default: false }, delete: { type: Boolean, default: false } },
+    events: { view: { type: Boolean, default: false }, edit: { type: Boolean, default: false }, delete: { type: Boolean, default: false } },
+    courses: { view: { type: Boolean, default: false }, edit: { type: Boolean, default: false } },
+    analytics: { view: { type: Boolean, default: false } },
+    settings: { view: { type: Boolean, default: false }, edit: { type: Boolean, default: false } }
+  },
+  assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  assignedAt: { type: Date },
+  eventPermissions: {
+    eventsManagement: { type: Boolean, default: false },
+    eventRegistrations: { type: Boolean, default: false },
+    eventUsers: { type: Boolean, default: false },
+    barcodeScanner: { type: Boolean, default: false }
+  },
   place: { type: String, required: true },
   gender: { type: String, required: true },
   age: { type: Number, required: true },

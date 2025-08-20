@@ -7,9 +7,11 @@ import EventRegistrationsApproval from '../components/admin/EventRegistrationsAp
 import EventUsersTab from '../components/admin/EventUsersTab.tsx';
 import AdminUsersTab from '../components/admin/AdminUsersTab.tsx';
 import BarcodeScanner from '../components/admin/BarcodeScanner.tsx';
+import RoleManagement from '../components/admin/RoleManagement.tsx';
+import EventPermissions from '../components/admin/EventPermissions.tsx';
 
 export default function AdminRequests() {
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState(4); // Default to Users tab
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
@@ -28,6 +30,8 @@ export default function AdminRequests() {
         {tab === 3 && <EventUsersTab />}
         {tab === 4 && <AdminUsersTab />}
         {tab === 5 && <BarcodeScanner />}
+        {tab === 6 && <RoleManagement />}
+        {tab === 7 && <EventPermissions />}
       </Box>
     </Box>
   );
