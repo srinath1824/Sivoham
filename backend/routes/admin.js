@@ -364,4 +364,31 @@ router.put('/users/:id/toggle-whatsapp', auth, async (req, res) => {
   }
 });
 
+// Delete user and all associated data
+router.delete('/users/:id', auth, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+    
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    // Prevent deletion of admin users
+    if (user.isAdmin) {
+      return res.status(403).json({ error: 'Cannot delete admin users' });
+    }
+    
+    // Delete user and all associated data
+    await User.findByIdAndDelete(req.params.id);
+    
+    // Note: If you have other collections (Progress, EventRegistrations, etc.)
+    // that reference this user, you should delete those records here as well:
+    // await Progress.deleteMany({ userId: req.params.id });
+    // await EventRegistration.deleteMany({ userId: req.params.id });
+    
+    res.json({ success: true, message: 'User and all associated data deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to delete user' });
+  }
+});
+
 module.exports = router;

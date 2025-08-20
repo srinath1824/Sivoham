@@ -31,6 +31,19 @@ import ReplayIcon from '@mui/icons-material/Replay';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 
+// Feature flags
+const USE_CDN_HLS = false; // Set to true to use CDN HLS streaming
+
+// Day mapping helper
+function getDayDisplay(level: number, day: number): string {
+  if (level === 2 && day === 4) return 'Meditation Test';
+  return `Day ${day}`;
+}
+
+function isDayMeditationTest(level: number, day: number): boolean {
+  return level === 2 && day === 4;
+}
+
 // Login Dialog Component
 function LoginDialog({ open, onClose, onLoginSuccess }: { open: boolean, onClose: () => void, onLoginSuccess: (user: any, token: string) => void }) {
   const [mobile, setMobile] = useState('');
@@ -86,7 +99,7 @@ function LoginDialog({ open, onClose, onLoginSuccess }: { open: boolean, onClose
 }
 
 // Registration Dialog Component
-function RegistrationDialog({ open, onClose, mobile, onRegisterSuccess }: { open: boolean, onClose: () => void, mobile: string, onRegisterSuccess: (user: any, token: string) => void }) {
+function RegistrationDialog({ open, onClose, mobile = '', onRegisterSuccess }: { open: boolean, onClose: () => void, mobile?: string, onRegisterSuccess: (user: any, token: string) => void }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [comment, setComment] = useState('');
@@ -98,7 +111,7 @@ function RegistrationDialog({ open, onClose, mobile, onRegisterSuccess }: { open
     setError('');
     setLoading(true);
     try {
-      const res = await apiRegister(mobile, firstName, lastName, comment, email);
+      const res = await apiRegister({ mobile, firstName, lastName, comment, email });
       onRegisterSuccess(res.user, res.token);
       setFirstName('');
       setLastName('');
@@ -167,7 +180,7 @@ const Courses = () => {
     return saved ? JSON.parse(saved) : null;
   });
   const [selectedLevel, setSelectedLevel] = useState<number>(1);
-  const [selectedDay, setSelectedDay] = useState(1);
+  const [selectedDay, setSelectedDay] = useState<number>(1);
   const [progress, setProgress] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -213,14 +226,12 @@ const Courses = () => {
   }, []);
 
   // Helper: get current day object and key
-  const currentDayObj = typeof selectedDay === 'number'
-    ? mockCourses.find(l => l.level === selectedLevel)?.days.find(d => d.day === selectedDay)
-    : undefined;
-  const currentKey = typeof selectedDay === 'number'
-    ? getKey(selectedLevel, selectedDay)
-    : selectedDay === 'meditationTest'
-      ? 'meditationTest'
-      : '';
+  const currentDayObj = isDayMeditationTest(selectedLevel, selectedDay)
+    ? undefined
+    : mockCourses.find(l => l.level === selectedLevel)?.days.find(d => d.day === selectedDay);
+  const currentKey = isDayMeditationTest(selectedLevel, selectedDay)
+    ? 'meditationTest'
+    : getKey(selectedLevel, selectedDay);
 
   // Find the first in-progress level (not fully completed)
   const getFirstInProgressLevel = React.useCallback((): number => {
@@ -309,6 +320,17 @@ const Courses = () => {
             setLoginOpen(false);
           }}
         />
+        <RegistrationDialog
+          open={registerOpen}
+          onClose={() => setRegisterOpen(false)}
+          onRegisterSuccess={(user, token) => {
+            setUser(user);
+            setToken(token);
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('token', token);
+            setRegisterOpen(false);
+          }}
+        />
       </div>
     );
   }
@@ -362,6 +384,12 @@ const Courses = () => {
    */
   function isDayUnlocked(level: number, day: number) {
     if (!isLevelUnlocked(level)) return false;
+    if (isDayMeditationTest(level, day)) {
+      // Meditation test unlocked when Level 2 is complete
+      return mockCourses.find(l => l.level === 2)?.days.every(
+        (d) => !!progress[getKey(2, d.day)]?.completed
+      ) || false;
+    }
     if (day === 1) return true;
     // Previous day must be completed and gap passed
     const prevKey = getKey(level, day - 1);
@@ -376,7 +404,7 @@ const Courses = () => {
    * @param day
    */
   function nextAvailableTime(level: number, day: number) {
-    if (day === 1) return 0;
+    if (isDayMeditationTest(level, day) || day === 1) return 0;
     const prevKey = getKey(level, day - 1);
     const prev = progress[prevKey];
     if (!prev?.completedAt) return 0;
@@ -428,19 +456,8 @@ const Courses = () => {
       }
       
       // Refetch progress from backend
-      const progressArr = await getProgress();
-      const progObj = {};
-      progressArr.forEach((p) => {
-        progObj[getKey(p.level, p.day)] = {
-          completed: p.completed,
-          feedback: p.feedback,
-          completedAt: p.completedAt ? new Date(p.completedAt).getTime() : undefined,
-          watchedSeconds: p.watchedSeconds,
-          videoDuration: p.videoDuration,
-        };
-      });
-      setProgress({ ...INITIAL_LEVEL_TEST, ...progObj });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...INITIAL_LEVEL_TEST, ...progObj }));
+      await fetchAndUpdateProgress();
+      const progObj = progress;
 
       // --- ADVANCE FOCUS LOGIC ---
       // Find current level's days
@@ -463,8 +480,7 @@ const Courses = () => {
         // Find next level to advance to
         if (selectedLevel === 2) {
           // After Level 2, go to meditation test
-          setSelectedLevel(3);
-          setSelectedDay('meditationTest');
+          setSelectedDay(4); // Day 4 of Level 2 is meditation test
         } else if (selectedLevel < 4) {
           // For other levels, advance to next level
           const nextLevelObj = mockCourses.find(l => l.level === selectedLevel + 1);
@@ -476,8 +492,8 @@ const Courses = () => {
       } else {
         // Advance to next day in current level
         const nextDay = selectedDay + 1;
-        const nextDayExists = currentLevelObj?.days.find(d => d.day === nextDay);
-        if (nextDayExists) {
+        const maxDays = selectedLevel === 2 ? 4 : 3; // Level 2 has 4 (including meditation test)
+        if (nextDay <= maxDays) {
           setSelectedDay(nextDay);
         }
       }
@@ -520,19 +536,7 @@ const Courses = () => {
       }
       
       // Refetch progress from backend
-      const progressArr = await getProgress();
-      const progObj = {};
-      progressArr.forEach((p) => {
-        progObj[getKey(p.level, p.day)] = {
-          completed: p.completed,
-          feedback: p.feedback,
-          completedAt: p.completedAt ? new Date(p.completedAt).getTime() : undefined,
-          watchedSeconds: p.watchedSeconds,
-          videoDuration: p.videoDuration,
-        };
-      });
-      setProgress({ ...INITIAL_LEVEL_TEST, ...progObj });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...INITIAL_LEVEL_TEST, ...progObj }));
+      await fetchAndUpdateProgress();
       setFeedback('');
     } catch (err) {
       // Optionally show error
@@ -543,6 +547,27 @@ const Courses = () => {
 
 
 
+
+  // Helper function to fetch and process progress from backend
+  const fetchAndUpdateProgress = async () => {
+    const progressArr = await getProgress();
+    const progObj = { ...INITIAL_LEVEL_TEST };
+    progressArr.forEach((p) => {
+      if (p.level === 2 && p.day === 4) {
+        progObj.meditationTestPassed = p.completed;
+      } else {
+        progObj[getKey(p.level, p.day)] = {
+          completed: p.completed,
+          feedback: p.feedback,
+          completedAt: p.completedAt ? new Date(p.completedAt).getTime() : undefined,
+          watchedSeconds: p.watchedSeconds,
+          videoDuration: p.videoDuration,
+        };
+      }
+    });
+    setProgress(progObj);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progObj));
+  };
 
   // Helper to determine pass/fail
   /**
@@ -573,8 +598,7 @@ const Courses = () => {
 
   // Add guard for locked content
   const levelIsUnlocked = typeof selectedLevel === 'number' ? isLevelUnlocked(selectedLevel) : true;
-  const dayIsUnlocked =
-    typeof selectedLevel === 'number' ? isDayUnlocked(selectedLevel, selectedDay) : true;
+  const dayIsUnlocked = isDayUnlocked(selectedLevel, selectedDay);
 
   // Calculate access windows for today
   const windows = COURSE_ACCESS_WINDOWS.map(({ startHour, endHour }) => {
@@ -829,7 +853,7 @@ const Courses = () => {
                   ) : (
                     <>
                       {/* Level Heading */}
-                      {selectedLevel === 3 && typeof selectedDay === 'string' && selectedDay === 'meditationTest' ? (
+                      {isDayMeditationTest(selectedLevel, selectedDay) ? (
                         <Box sx={{ mb: 3 }}>
                           <Typography
                             variant="h2"
@@ -907,7 +931,7 @@ const Courses = () => {
                             Start Meditation Test
                           </Button>
                         </Box>
-                      ) : (typeof selectedLevel === 'number' && typeof selectedDay === 'number') && (
+                      ) : (
                         <>
                           <Typography
                             variant="h2"
@@ -937,7 +961,7 @@ const Courses = () => {
                         </>
                       )}
                       {/* Video Player */}
-                      {selectedLevel === 3 && typeof selectedDay === 'string' && selectedDay === 'meditationTest' ? null : (
+                      {isDayMeditationTest(selectedLevel, selectedDay) ? null : (
                         <VideoPlayer
                           videoUrl={currentDayObj?.videoUrl || ''}
                           videoRef={videoRef}
@@ -955,7 +979,7 @@ const Courses = () => {
                         />
                       )}
                       {/* Feedback Section */}
-                      {selectedLevel === 3 && typeof selectedDay === 'string' && selectedDay === 'meditationTest' ? null : (
+                      {isDayMeditationTest(selectedLevel, selectedDay) ? null : (
                         <FeedbackSection
                           feedback={feedback}
                           setFeedback={setFeedback}
@@ -1005,26 +1029,43 @@ const Courses = () => {
           severity="success"
           sx={{ width: '100%' }}
         >
-          Day marked as complete!
+          {isDayMeditationTest(selectedLevel, selectedDay) ? 'Meditation test completed!' : 'Day marked as complete!'}
         </Alert>
       </Snackbar>
 
       {/* Meditation Test Dialog */}
       <Dialog open={videoTestOpen} onClose={() => setVideoTestOpen(false)} maxWidth="sm" fullWidth>
         <VideoMeditationTest
-          onComplete={(result) => {
+          onComplete={async (result) => {
             setVideoTestOpen(false);
             setVideoTestResult(result);
             if (result.success) {
-              // Mark meditation test as passed in progress and localStorage
-              setProgress((prev) => {
-                const updated = { ...prev, meditationTestPassed: true };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-                return updated;
-              });
-              // Move to Level 3 Day 1
-              setSelectedLevel(3);
-              setSelectedDay(1);
+              try {
+                // Save meditation test completion to backend
+                await updateProgress({
+                  level: 2,
+                  day: 4, // Meditation test as day 4 of level 2
+                  completed: true,
+                  completedAt: Date.now(),
+                  feedback: 'Meditation test passed',
+                  watchedSeconds: 0,
+                  videoDuration: 0,
+                });
+                
+                // Mark meditation test as passed in progress and localStorage
+                const updatedProgress = { ...progress, meditationTestPassed: true };
+                setProgress(updatedProgress);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProgress));
+                
+                // Move to Level 3 Day 1
+                setSelectedLevel(3);
+                setSelectedDay(1);
+                
+                // Show completion toast
+                setShowCompleteToast(true);
+              } catch (err) {
+                console.error('Failed to save meditation test completion:', err);
+              }
             }
           }}
           onCancel={() => setVideoTestOpen(false)}

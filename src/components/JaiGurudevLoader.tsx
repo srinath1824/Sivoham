@@ -22,14 +22,14 @@ export default function JaiGurudevLoader({ size = 'medium' }: JaiGurudevLoaderPr
         gap: sizeConfig[size].spacing,
         py: sizeConfig[size].spacing,
         px: 3,
-        background: 'rgba(255, 247, 240, 0.8)',
-        borderRadius: 3,
-        backdropFilter: 'blur(10px)',
-        boxShadow: '0 4px 20px rgba(222,107,47,0.1)'
+        // background: 'rgba(255, 247, 240, 0.8)',
+        // borderRadius: 3,
+        // backdropFilter: 'blur(10px)',
+        // boxShadow: '0 4px 20px rgba(222,107,47,0.1)'
       }}
     >
       {/* Circular Background with Prayer Hands */}
-      <Box
+      {/* <Box
         sx={{
           width: sizeConfig[size].circleSize,
           height: sizeConfig[size].circleSize,
@@ -55,7 +55,7 @@ export default function JaiGurudevLoader({ size = 'medium' }: JaiGurudevLoaderPr
         >
           🙏
         </Box>
-      </Box>
+      </Box> */}
       
       {/* Text with Inline Animated Dots */}
       <Typography 

@@ -58,7 +58,7 @@ export function getKey(level: number, day: number): string {
  */
 export const COURSE_ACCESS_WINDOWS = [
   { startHour: 6, endHour: 16 },   // 06:00-08:00 AM
-  { startHour: 18, endHour: 20 }, // 06:00-08:00 PM
+  { startHour: 14, endHour: 20 }, // 06:00-08:00 PM
 ];
 
 /**

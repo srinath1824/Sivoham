@@ -8,6 +8,7 @@ import LoginDialog from './components/LoginDialog.tsx';
 import Join from './pages/Join.tsx';
 import AdminRequests from './pages/AdminRequests.tsx';
 import { getUserProfile } from './services/api.ts';
+import Profile from './pages/Profile.tsx';
 
 interface UserProfile {
   _id?: string;
@@ -129,7 +130,7 @@ function App({ navigate }: { navigate: any }) {
             <LoginRequiredMessage onLoginClick={handleLoginClick} />
           )
         } />
-        <Route path="/progress" element={
+        {/* <Route path="/progress" element={
           user ? (
             <Suspense fallback={<SectionLoader />}>
               <Progress />
@@ -137,7 +138,7 @@ function App({ navigate }: { navigate: any }) {
           ) : (
             <LoginRequiredMessage onLoginClick={handleLoginClick} />
           )
-        } />
+        } /> */}
         <Route path="/admin" element={
           user && user.isAdmin ? (
             <AdminRequests />
@@ -151,6 +152,7 @@ function App({ navigate }: { navigate: any }) {
             </div>
           )
         } />
+        <Route path="/profile" element={<Profile />} />
         </Routes>
         <Footer />
       </div>

@@ -122,12 +122,7 @@ export default function Testimonials() {
                   <h3 style={{fontWeight: 600, color: 'var(--primary)', marginBottom: 4}}>{t('home.testimonialsList.' + i + '.name')}</h3>
                   <span style={{fontSize: '0.95rem', color: 'var(--text-light)', marginBottom: 8}}>{t('home.testimonialsList.' + i + '.desc')}</span>
                   <p style={{marginTop: 8, lineHeight: 1.4, textAlign: 'justify'}}>
-                    {t('home.testimonialsList.' + i + '.text').split('. ').map((sentence, idx, arr) => (
-                      <span key={idx}>
-                        {sentence}{idx < arr.length - 1 && !sentence.endsWith('.') ? '.' : ''}
-                        {idx < arr.length - 1 && <br />}
-                      </span>
-                    ))}
+                    {t('home.testimonialsList.' + i + '.text')}
                   </p>
                 </div>
               ))}
@@ -193,12 +188,7 @@ export default function Testimonials() {
                 <h3 style={{fontWeight: 600, color: 'var(--primary)', marginBottom: 4}}>{t('home.testimonialsList.' + i + '.name')}</h3>
                 <span style={{fontSize: '0.95rem', color: 'var(--text-light)', marginBottom: 8}}>{t('home.testimonialsList.' + i + '.desc')}</span>
                 <p style={{marginTop: 8, lineHeight: 1.4, textAlign: 'justify'}}>
-                  {t('home.testimonialsList.' + i + '.text').split('. ').map((sentence, idx, arr) => (
-                    <span key={idx}>
-                      {sentence}{idx < arr.length - 1 && !sentence.endsWith('.') ? '.' : ''}
-                      {idx < arr.length - 1 && <br />}
-                    </span>
-                  ))}
+                  {t('home.testimonialsList.' + i + '.text')}
                 </p>
               </div>
             ))}

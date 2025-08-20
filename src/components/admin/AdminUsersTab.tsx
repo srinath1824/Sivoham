@@ -18,6 +18,8 @@ export default function AdminUsersTab() {
   const [templateDialog, setTemplateDialog] = useState<{ open: boolean; template: string }>({ open: false, template: '' });
   const [editableTemplate, setEditableTemplate] = useState('');
   const [watchTimeDialog, setWatchTimeDialog] = useState<{ open: boolean; user: any | null }>({ open: false, user: null });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; user: any | null }>({ open: false, user: null });
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchUsers() {
@@ -129,6 +131,28 @@ export default function AdminUsersTab() {
       ));
     } catch (err: any) {
       alert(err.response?.data?.error || err.message || 'Failed to update WhatsApp status');
+    }
+  }
+
+  async function handleDeleteUser() {
+    if (!deleteDialog.user) return;
+    
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await axios.delete(`/api/admin/users/${deleteDialog.user._id}`, config);
+      
+      // Remove user from local state
+      setUsers(prev => prev.filter(user => user._id !== deleteDialog.user._id));
+      setTotalCount(prev => prev - 1);
+      
+      alert('User deleted successfully!');
+      setDeleteDialog({ open: false, user: null });
+    } catch (err: any) {
+      alert(err.response?.data?.error || err.message || 'Failed to delete user');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -288,6 +312,7 @@ export default function AdminUsersTab() {
                 <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Selected</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>WhatsApp</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Message Sent</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '1rem' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -360,6 +385,22 @@ export default function AdminUsersTab() {
                       sx={{ color: '#25D366' }}
                       title="Mark as WhatsApp message sent"
                     />
+                  </TableCell>
+                  <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', textAlign: 'center' }}>
+                    {!u.isAdmin && (
+                      <IconButton
+                        onClick={() => setDeleteDialog({ open: true, user: u })}
+                        sx={{ 
+                          color: '#d32f2f',
+                          '&:hover': { 
+                            backgroundColor: 'rgba(211, 47, 47, 0.1)' 
+                          }
+                        }}
+                        title="Delete user"
+                      >
+                        <Delete />
+                      </IconButton>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -698,6 +739,79 @@ export default function AdminUsersTab() {
             }}
           >
             Close Analytics
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onClose={() => !deleting && setDeleteDialog({ open: false, user: null })} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ 
+          background: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)',
+          color: 'white',
+          textAlign: 'center',
+          py: 2
+        }}>
+          ⚠️ Delete User
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          {deleteDialog.user && (
+            <Box>
+              <Typography variant="h6" sx={{ mb: 2, color: '#d32f2f', fontWeight: 700 }}>
+                Are you sure you want to delete this user?
+              </Typography>
+              <Box sx={{ 
+                background: '#ffebee', 
+                borderRadius: 2, 
+                p: 2, 
+                mb: 2,
+                border: '1px solid #ffcdd2'
+              }}>
+                <Typography variant="body1" sx={{ fontWeight: 600, mb: 1 }}>
+                  {deleteDialog.user.firstName} {deleteDialog.user.lastName}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#666', mb: 0.5 }}>
+                  Mobile: {deleteDialog.user.mobile}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#666' }}>
+                  Email: {deleteDialog.user.email || 'N/A'}
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: '#d32f2f', fontWeight: 600, mb: 1 }}>
+                This action will permanently delete:
+              </Typography>
+              <Box component="ul" sx={{ color: '#666', pl: 2, mb: 2 }}>
+                <li>User account and profile data</li>
+                <li>Course progress and watch history</li>
+                <li>Event registrations and attendance</li>
+                <li>All associated user data</li>
+              </Box>
+              <Typography variant="body2" sx={{ color: '#d32f2f', fontWeight: 700 }}>
+                This action cannot be undone!
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <Button 
+            onClick={() => setDeleteDialog({ open: false, user: null })}
+            variant="outlined"
+            disabled={deleting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteUser}
+            variant="contained"
+            color="error"
+            disabled={deleting}
+            sx={{ 
+              background: 'linear-gradient(90deg, #d32f2f 0%, #b71c1c 100%)',
+              '&:hover': {
+                background: 'linear-gradient(90deg, #b71c1c 0%, #d32f2f 100%)'
+              }
+            }}
+          >
+            {deleting ? 'Deleting...' : 'Delete User'}
           </Button>
         </DialogActions>
       </Dialog>

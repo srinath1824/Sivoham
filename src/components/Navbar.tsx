@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { AppBar, Toolbar, Typography, Box, IconButton, Drawer, List, ListItem, ListItemText, Divider, ListItemButton } from '@mui/material';
+import { AppBar, Toolbar, Typography, Box, IconButton, Drawer, List, ListItem, ListItemText, Divider, ListItemButton, Menu, MenuItem, Avatar } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +17,7 @@ const navLinks = [
   { name: 'nav.joinUs', to: '/join' },
   { name: 'nav.events', to: '/events' },
   { name: 'nav.courses', to: '/courses' },
-  { name: 'nav.progress', to: '/progress' },
+  // { name: 'nav.progress', to: '/progress' },
 ];
 
 /**
@@ -51,6 +50,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
   if (isAdmin && !filteredMobileDrawerTabs.includes('nav.admin')) filteredMobileDrawerTabs.push('nav.admin');
 
   const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const [userMenuAnchor, setUserMenuAnchor] = React.useState<null | HTMLElement>(null);
   const navigate = useNavigate();
 
   // Handler for anchor links
@@ -122,31 +122,70 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
                 {t('nav.login')}
               </button>
             ) : (
-              <button
-                onClick={onLogoutClick}
-                style={{
-                  background: 'linear-gradient(90deg, #b45309 0%, #de6b2f 100%)',
-                  color: '#fff',
-                  fontFamily: 'Lora, serif',
-                  fontWeight: 600,
-                  fontSize: 16,
-                  padding: '8px 20px',
-                  border: 'none',
-                  borderRadius: 20,
-                  marginLeft: 16,
-                  cursor: 'pointer',
-                  borderLeft: '1px solid #ddd',
-                  transition: 'background 0.2s',
-                }}
-              >
-                {t('nav.logout')}
-              </button>
+              <>
+                {/* User avatar button with initials */}
+                <IconButton
+                  onClick={e => setUserMenuAnchor(e.currentTarget)}
+                  sx={{
+                    ml: 2,
+                    width: 44,
+                    height: 44,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 18,
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      bgcolor: 'transparent',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: 18,
+                    }}
+                  >
+                    {`${(user.firstName?.[0] || '').toUpperCase()}${(user.lastName?.[0] || '').toUpperCase()}`}
+                  </Avatar>
+                </IconButton>
+                <Menu
+                  anchorEl={userMenuAnchor}
+                  open={Boolean(userMenuAnchor)}
+                  onClose={() => setUserMenuAnchor(null)}
+                  PaperProps={{ sx: { minWidth: 200, borderRadius: 2 } }}
+                >
+                  <MenuItem disabled>
+                    <span style={{ fontWeight: 700, color: '#b45309' }}>
+                      {`${user.firstName || ''} ${user.lastName || ''}`.trim()}
+                    </span>
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem
+                    onClick={() => {
+                      navigate("/profile");
+                      setUserMenuAnchor(null);
+                    }}
+                  >
+                    Profile
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      onLogoutClick && onLogoutClick();
+                      setUserMenuAnchor(null);
+                    }}
+                  >
+                    Logout
+                  </MenuItem>
+                </Menu>
+              </>
             )}
           </Box>
         </Toolbar>
       </AppBar>
       {/* Secondary Header Bar */}
-      <AppBar position="sticky" color="inherit" elevation={0} sx={{ bgcolor: '#fff', minHeight: 40, boxShadow: 'none', borderBottom: 1, borderColor: 'divider', display: { xs: 'flex', md: 'none' }, top: 0, zIndex: 1201 }}>
+      <AppBar position="sticky" color="inherit" elevation={0} sx={{ bgcolor: '#fff', minHeight: 40, boxShadow: 'none', borderBottom: 1, borderColor: 'divider', display: { xs: 'flex', md: 'none' }, top: '60px', zIndex: 1201 }}>
         <Toolbar sx={{ minHeight: 40, px: { xs: 1, md: 3 }, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
           {filteredNavLinks.filter(link => ['nav.home', 'nav.about', 'nav.programs', 'nav.courses'].includes(link.name)).map(link => (
             link.to.startsWith('/') ? (
@@ -215,33 +254,82 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
                 {t('nav.login')}
               </button>
             ) : (
-              <button
-                onClick={onLogoutClick}
-                style={{
-                  background: 'linear-gradient(90deg, #b45309 0%, #de6b2f 100%)',
-                  color: '#fff',
-                  fontFamily: 'Lora, serif',
-                  fontWeight: 600,
-                  fontSize: 16,
-                  padding: '8px 20px',
-                  border: 'none',
-                  borderRadius: 20,
-                  marginLeft: 16,
-                  cursor: 'pointer',
-                  borderLeft: '1px solid #ddd',
-                  transition: 'background 0.2s',
-                }}
-              >
-                {t('nav.logout')}
-              </button>
+              <>
+                {/* User avatar button with initials */}
+                <IconButton
+                  onClick={e => setUserMenuAnchor(e.currentTarget)}
+                  sx={{
+                    ml: 2,
+                    width: 44,
+                    height: 44,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 18,
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      bgcolor: 'transparent',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: 18,
+                    }}
+                  >
+                    {`${(user.firstName?.[0] || '').toUpperCase()}${(user.lastName?.[0] || '').toUpperCase()}`}
+                  </Avatar>
+                </IconButton>
+                <Menu
+                  anchorEl={userMenuAnchor}
+                  open={Boolean(userMenuAnchor)}
+                  onClose={() => setUserMenuAnchor(null)}
+                  PaperProps={{ sx: { minWidth: 200, borderRadius: 2 } }}
+                >
+                  <MenuItem disabled>
+                    <span style={{ fontWeight: 700, color: '#b45309' }}>
+                      {`${user.firstName || ''} ${user.lastName || ''}`.trim()}
+                    </span>
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem
+                    onClick={() => {
+                      navigate("/profile");
+                      setUserMenuAnchor(null);
+                    }}
+                  >
+                    Profile
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      onLogoutClick && onLogoutClick();
+                      setUserMenuAnchor(null);
+                    }}
+                  >
+                    Logout
+                  </MenuItem>
+                </Menu>
+              </>
             )}
           </Box>
         </Toolbar>
       </AppBar>
       {/* Mobile Drawer */}
-      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+      <Drawer style={{ zIndex: 10000 }} anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <Box sx={{ width: 240, pt: 2 }} role="presentation" onClick={() => setDrawerOpen(false)}>
           <List>
+            <MenuItem disabled>
+              <span style={{ fontWeight: 700, color: '#b45309' }}>
+                {`${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
+              </span>
+            </MenuItem>
+            <ListItem key={'/profile'} disablePadding>
+              <ListItemButton component={Link} to={'/profile'}>
+                <ListItemText primary={t('profile')} />
+              </ListItemButton>
+            </ListItem>
             {navLinks.filter(link => filteredMobileDrawerTabs.includes(link.name)).map(link => (
               link.to.startsWith('/') ? (
                 <ListItem key={link.to} disablePadding>

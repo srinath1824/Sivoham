@@ -17,6 +17,16 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 import { mockCourses, getKey } from '../../config/constants';
 
+// Day mapping helper
+function getDayDisplay(level: number, day: number): string {
+  if (level === 2 && day === 4) return 'Meditation Test';
+  return `Day ${day}`;
+}
+
+function isDayMeditationTest(level: number, day: number): boolean {
+  return level === 2 && day === 4;
+}
+
 interface SidebarProps {
   selectedLevel: number;
   setSelectedLevel: (level: number) => void;
@@ -99,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           // After Level 2, always insert Meditation Test
           if (course.level === 2) {
             const meditationTestPassed = progress['meditationTestPassed'] || false;
-            const isSelected = selectedLevel === 3 && typeof selectedDay === 'string' && selectedDay === 'meditationTest';
+            const isSelected = selectedLevel === 2 && selectedDay === 4;
             return [
               <Accordion
                 key={course.level}
@@ -120,17 +130,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </AccordionSummary>
                 <AccordionDetails sx={{ px: 0, pt: 0 }}>
                   <List component="div" disablePadding>
-                    {/* Meditation Test logic removed for type safety */}
+                    {/* Regular days */}
                     {course.days.map((dayObj: any) => {
-                      // For Level 3 Day 1, lock until meditation test is passed
                       let unlocked = isDayUnlocked(course.level, dayObj.day);
-                      if (
-                        course.level === 3 &&
-                        dayObj.day === 1 &&
-                        !progress['meditationTestPassed']
-                      ) {
-                        unlocked = false;
-                      }
                       const done = !!progress[getKey(course.level, dayObj.day)]?.completed;
                       const nextTime = nextAvailableTime(course.level, dayObj.day);
                       const isSelected = selectedLevel === course.level && selectedDay === dayObj.day;
@@ -190,28 +192,70 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </ListItemButton>
                       );
                     })}
+                    {/* Meditation Test for Level 2 */}
+                    {course.level === 2 && (() => {
+                      const meditationTestPassed = progress['meditationTestPassed'] || false;
+                      const level2Complete = course.days.every(
+                        (dayObj: any) => !!progress[getKey(2, dayObj.day)]?.completed
+                      );
+                      const unlocked = level2Complete;
+                      const isSelected = selectedLevel === 2 && selectedDay === 4;
+                      return (
+                        <ListItemButton
+                          key={4}
+                          sx={{
+                            pl: 4,
+                            borderRadius: 2,
+                            mb: 1,
+                            bgcolor: isSelected ? 'rgba(222,107,47,0.08)' : undefined,
+                            '&:hover': {
+                              bgcolor: 'rgba(25, 118, 210, 0.08)',
+                            },
+                          }}
+                          selected={isSelected}
+                          onClick={() => {
+                            if (unlocked) {
+                              setSelectedLevel(2);
+                              setSelectedDay(4);
+                            }
+                          }}
+                          disabled={!unlocked}
+                        >
+                          <ListItemText
+                            primary={
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  fontWeight: 700,
+                                  color: '#b45309',
+                                }}
+                              >
+                                Meditation Test
+                                <Fade in={meditationTestPassed} timeout={600}>
+                                  <span>
+                                    {meditationTestPassed && (
+                                      <CheckCircleIcon
+                                        fontSize="small"
+                                        sx={{ color: 'success.main', ml: 1 }}
+                                      />
+                                    )}
+                                  </span>
+                                </Fade>
+                              </Box>
+                            }
+                            secondary={meditationTestPassed ? 'Passed' : unlocked ? 'Required' : 'Complete Level 2 first'}
+                          />
+                          {!unlocked && (
+                            <LockIcon fontSize="small" sx={{ ml: 1, color: 'grey.400' }} />
+                          )}
+                        </ListItemButton>
+                      );
+                    })()}
                   </List>
                 </AccordionDetails>
                 <Divider />
-              </Accordion>,
-              <ListItemButton
-                key="meditation-test"
-                sx={{ borderRadius: 2, mb: 1, mt: 2, pl: 2, bgcolor: isSelected ? 'rgba(222,107,47,0.08)' : undefined, opacity: meditationTestPassed ? 0.6 : 1 }}
-                selected={isSelected}
-                onClick={() => {
-                  if (!meditationTestPassed) {
-                    setSelectedLevel(3);
-                    setSelectedDay('meditationTest' as any);
-                  }
-                }}
-                disabled={meditationTestPassed}
-              >
-                <ListItemText
-                  primary={<Box sx={{ fontWeight: 700, color: '#b45309' }}>Meditation Test</Box>}
-                  secondary={meditationTestPassed ? 'Passed' : 'Required'}
-                />
-                {meditationTestPassed && <CheckCircleIcon fontSize="small" sx={{ color: 'success.main', ml: 1 }} />}
-              </ListItemButton>
+              </Accordion>
             ];
           }
           return (
@@ -235,10 +279,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               </AccordionSummary>
               <AccordionDetails sx={{ px: 0, pt: 0 }}>
                 <List component="div" disablePadding>
-                  {/* Meditation Test logic removed for type safety */}
                   {course.days.map((dayObj: any) => {
-                    // Only operate on number day values
-                    if (typeof dayObj.day !== 'number') return null;
                     let unlocked = isDayUnlocked(course.level, dayObj.day);
                     if (
                       course.level === 3 &&
@@ -249,7 +290,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     }
                     const done = !!progress[getKey(course.level, dayObj.day)]?.completed;
                     const nextTime = nextAvailableTime(course.level, dayObj.day);
-                    const isSelected = selectedLevel === course.level && typeof selectedDay === 'number' && typeof dayObj.day === 'number' && selectedDay === dayObj.day;
+                    const isSelected = selectedLevel === course.level && selectedDay === dayObj.day;
                     return (
                       <ListItemButton
                         key={dayObj.day}

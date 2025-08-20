@@ -223,3 +223,23 @@ export async function bulkRejectUsers(userIds: string[]) {
   if (!res.ok) throw new Error('Failed to bulk reject users');
   return res.json();
 }
+
+/**
+ * Update the user's profile
+ * @param data
+ */
+export async function updateUserProfile(data: any) {
+  const token = localStorage.getItem("token");
+  const res = await fetch("/api/user/profile", {
+    method: "PUT", // or "PATCH" depending on your backend
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to update profile");
+  }
+  return await res.json();
+}
