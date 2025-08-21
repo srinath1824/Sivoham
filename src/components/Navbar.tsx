@@ -70,7 +70,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
         <Toolbar sx={{ minHeight: 64, px: { xs: 1, md: 3 }, display: 'flex', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <img src="/images/SKS_Logo_4K-1.png" alt="Logo" style={{ height: 36, width: 'auto' }} />
-            <Typography variant="h6" sx={{ fontFamily: 'cursive', fontWeight: 600, color: '#1a2341', letterSpacing: 1, fontSize: { xs: '1.1rem', md: '1.4rem' } }}>
+            <Typography variant="h6" sx={{ fontFamily: "'Lora', serif", fontWeight: 600, color: '#1a2341', letterSpacing: 1, fontSize: { xs: '1.1rem', md: '1.4rem' } }}>
               {t('welcome')}
             </Typography>
           </Box>
@@ -210,7 +210,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
         <Toolbar sx={{ minHeight: 64, px: 3, display: 'flex', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <img src="/images/SKS_Logo_4K-1.png" alt="Logo" style={{ height: 36, width: 'auto' }} />
-            <Typography variant="h6" sx={{ fontFamily: 'cursive', fontWeight: 600, color: '#1a2341', letterSpacing: 1, fontSize: '1.4rem' }}>
+            <Typography variant="h6" sx={{ fontFamily: "'Lora', serif", fontWeight: 600, color: '#1a2341', letterSpacing: 1, fontSize: '1.4rem' }}>
               {t('welcome')}
             </Typography>
           </Box>
