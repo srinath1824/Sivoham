@@ -389,20 +389,27 @@ export default function AdminUsersTab() {
                     />
                   </TableCell>
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', textAlign: 'center' }}>
-                    {!u.isAdmin && hasPermission('users', 'delete') && (
-                      <IconButton
-                        onClick={() => setDeleteDialog({ open: true, user: u })}
-                        sx={{ 
-                          color: '#d32f2f',
-                          '&:hover': { 
-                            backgroundColor: 'rgba(211, 47, 47, 0.1)' 
-                          }
-                        }}
-                        title="Delete user"
-                      >
-                        <Delete />
-                      </IconButton>
-                    )}
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                      {!u.isAdmin && (
+                        <IconButton
+                          onClick={() => setDeleteDialog({ open: true, user: u })}
+                          sx={{ 
+                            color: '#d32f2f',
+                            '&:hover': { 
+                              backgroundColor: 'rgba(211, 47, 47, 0.1)' 
+                            }
+                          }}
+                          title="Delete user"
+                        >
+                          <Delete />
+                        </IconButton>
+                      )}
+                      {u.isAdmin && (
+                        <Typography variant="caption" sx={{ color: '#666', fontStyle: 'italic', py: 1 }}>
+                          Admin User
+                        </Typography>
+                      )}
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}

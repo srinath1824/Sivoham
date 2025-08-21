@@ -10,9 +10,10 @@ import BarcodeScanner from '../components/admin/BarcodeScanner.tsx';
 import RoleManagement from '../components/admin/RoleManagement.tsx';
 import EventPermissions from '../components/admin/EventPermissions.tsx';
 import InProgressTab from '../components/admin/InProgressTab.tsx';
+import AdminWelcome from '../components/admin/AdminWelcome.tsx';
 
 export default function AdminRequests() {
-  const [tab, setTab] = useState(4); // Default to Users tab
+  const [tab, setTab] = useState(-1); // Default to welcome screen
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
@@ -25,6 +26,7 @@ export default function AdminRequests() {
       />
       
       <Box sx={{ flex: 1, p: { xs: 1, md: 3 } }}>
+        {tab === -1 && <AdminWelcome />}
         {tab === 0 && <AdminRequestsContent />}
         {tab === 1 && <EventsManagement />}
         {tab === 2 && <EventRegistrationsApproval />}
