@@ -257,6 +257,23 @@ function AppWithRouter() {
 }
 
 export default function RootApp() {
+  useEffect(() => {
+    // Suppress MetaMask extension errors globally
+    window.addEventListener('error', (e) => {
+      if (e.message?.includes('MetaMask') || e.filename?.includes('chrome-extension')) {
+        e.preventDefault();
+        return false;
+      }
+    });
+    
+    window.addEventListener('unhandledrejection', (e) => {
+      if (e.reason?.message?.includes('MetaMask')) {
+        e.preventDefault();
+        return false;
+      }
+    });
+  }, []);
+  
   return (
     <Router>
       <AppWithRouter />

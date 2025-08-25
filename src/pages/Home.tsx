@@ -5,7 +5,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 const Programs = lazy(() => import('./Programs.tsx'));
 const Gallery = lazy(() => import('./Gallery.tsx'));
-const Testimonials = lazy(() => import('./Testimonials.tsx'));
+// const Testimonials = lazy(() => import('./Testimonials.tsx'));
+const YouTubeShorts = lazy(() => import('../components/YouTubeShorts.tsx'));
 
 const images = [
   '/logo192.png',
@@ -103,6 +104,17 @@ export default function Home() {
       const timer = setTimeout(() => setShowBadge(false), 3000);
       return () => clearTimeout(timer);
     }
+    
+    // Suppress MetaMask extension errors
+    const originalError = console.error;
+    console.error = (...args) => {
+      if (args[0]?.toString().includes('MetaMask')) return;
+      originalError.apply(console, args);
+    };
+    
+    return () => {
+      console.error = originalError;
+    };
   }, [registered]);
   return (
     <main className="main-content">
@@ -172,9 +184,15 @@ export default function Home() {
         </Suspense>
       </section>
       {/* Testimonials Section */}
-      <section id="testimonials" style={{ background: '#ffff', padding: '2rem' }} >
+      {/* <section id="testimonials" style={{ background: '#ffff', padding: '2rem' }} >
         <Suspense fallback={<SectionLoader />}>
           <Testimonials />
+        </Suspense>
+      </section> */}
+      {/* YouTube Videos Section */}
+      <section id="youtube-videos" style={{ background: '#fff7f0', padding: '2rem' }}>
+        <Suspense fallback={<SectionLoader />}>
+          <YouTubeShorts />
         </Suspense>
       </section>
     </main>
