@@ -11,12 +11,16 @@ export const SKIP_LOGIN = true;
 /**
  * If true, uses CDN/HLS adaptive streaming for videos.
  */
-export const USE_CDN_HLS = true;
+export const USE_CDN_HLS = false;
 
 /**
- * Example HLS URLs for video streaming. Replace with real CDN links in production.
+ * Production video URLs for course content
  */
-export const HLS_URLS = ['https://www.w3schools.com/html/mov_bbb.mp4'];
+export const HLS_URLS = [
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
+];
 
 /**
  * Width of the sidebar drawer in pixels.
@@ -72,7 +76,7 @@ export const mockCourses = [
       day: i + 1,
       videoUrl: USE_CDN_HLS
         ? HLS_URLS[i % HLS_URLS.length]
-        : 'https://www.w3schools.com/html/mov_bbb.mp4',
+        : 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
     })),
   },
   {
@@ -81,7 +85,7 @@ export const mockCourses = [
       day: i + 1,
       videoUrl: USE_CDN_HLS
         ? HLS_URLS[(i + 1) % HLS_URLS.length]
-        : 'https://www.w3schools.com/html/mov_bbb.mp4',
+        : 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
     })),
   },
   {
@@ -90,7 +94,7 @@ export const mockCourses = [
       day: i + 1,
       videoUrl: USE_CDN_HLS
         ? HLS_URLS[i % HLS_URLS.length]
-        : 'https://www.w3schools.com/html/mov_bbb.mp4',
+        : 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
     })),
   },
   {
@@ -99,7 +103,7 @@ export const mockCourses = [
       day: i + 1,
       videoUrl: USE_CDN_HLS
         ? HLS_URLS[(i + 1) % HLS_URLS.length]
-        : 'https://www.w3schools.com/html/mov_bbb.mp4',
+        : 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
     })),
   },
 ];

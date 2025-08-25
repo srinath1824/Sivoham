@@ -18,7 +18,7 @@
         "headers": [
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://sks-server-production.up.railway.app data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://sks-server-production.up.railway.app"
+            "value": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://sks-server-production.up.railway.app data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' https://commondatastorage.googleapis.com; connect-src 'self' https://sks-server-production.up.railway.app"
           }
         ]
       }
