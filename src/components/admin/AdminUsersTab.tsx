@@ -7,6 +7,7 @@ import AdminFilters from './AdminFilters.tsx';
 import PermissionGuard from './PermissionGuard.tsx';
 import { usePermissions } from '../../contexts/PermissionContext.tsx';
 import axios from 'axios';
+import { API_URL } from '../../services/api.ts';
 
 export default function AdminUsersTab() {
   const [users, setUsers] = useState<any[]>([]);
@@ -30,15 +31,18 @@ export default function AdminUsersTab() {
       setError('');
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`/api/admin/all-users?page=${page + 1}&limit=${rowsPerPage}`, { 
+        const res = await fetch(`${API_URL}/admin/all-users?page=${page + 1}&limit=${rowsPerPage}`, { 
           headers: { Authorization: `Bearer ${token}` } 
         });
         if (!res.ok) throw new Error('Failed to fetch users');
         const data = await res.json();
-        setUsers(data.users || data);
-        setTotalCount(data.total || data.length);
+        const usersArray = Array.isArray(data.users) ? data.users : Array.isArray(data) ? data : [];
+        setUsers(usersArray);
+        setTotalCount(data.total || usersArray.length);
       } catch (err: any) {
         setError(err.message || 'Failed to fetch users');
+        setUsers([]);
+        setTotalCount(0);
       } finally {
         setLoading(false);
       }
@@ -47,6 +51,7 @@ export default function AdminUsersTab() {
   }, [page, rowsPerPage]);
 
   const filteredUsers = useMemo(() => {
+    if (!Array.isArray(users)) return [];
     return users.filter(user => {
       const name = `${user.firstName} ${user.lastName}`.toLowerCase();
       const mobile = user.mobile?.toLowerCase() || '';
@@ -126,7 +131,7 @@ export default function AdminUsersTab() {
     try {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.put(`/api/admin/users/${userId}/toggle-whatsapp`, {}, config);
+      const response = await axios.put(`${API_URL}/admin/users/${userId}/toggle-whatsapp`, {}, config);
       setUsers(prev => prev.map(user => 
         user._id === userId 
           ? { ...user, whatsappSent: response.data.whatsappSent }
@@ -144,7 +149,7 @@ export default function AdminUsersTab() {
     try {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.delete(`/api/admin/users/${deleteDialog.user._id}`, config);
+      await axios.delete(`${API_URL}/admin/users/${deleteDialog.user._id}`, config);
       
       // Remove user from local state
       setUsers(prev => prev.filter(user => user._id !== deleteDialog.user._id));

@@ -5,6 +5,7 @@ import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 import RoleAssignDialog from './RoleAssignDialog.tsx';
 import PermissionMatrix from './PermissionMatrix.tsx';
 import axios from 'axios';
+import { API_URL } from '../../services/api.ts';
 
 interface AdminUser {
   _id: string;
@@ -35,12 +36,13 @@ export default function RoleManagement() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/api/admin/roles', {
+      const res = await axios.get(`${API_URL}/admin/roles`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setAdmins(res.data);
+      setAdmins(Array.isArray(res.data) ? res.data : []);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch admin users');
+      setAdmins([]);
     } finally {
       setLoading(false);
     }
@@ -52,7 +54,7 @@ export default function RoleManagement() {
     setRevoking(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`/api/admin/revoke-role/${revokeDialog.user._id}`, {
+      await axios.delete(`${API_URL}/admin/revoke-role/${revokeDialog.user._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -69,7 +71,7 @@ export default function RoleManagement() {
   const handleUpdatePermissions = async (userId: string, permissions: any) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/admin/update-permissions/${userId}`, { permissions }, {
+      await axios.put(`${API_URL}/admin/update-permissions/${userId}`, { permissions }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -125,7 +127,7 @@ export default function RoleManagement() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {admins.map((admin, idx) => (
+            {Array.isArray(admins) && admins.map((admin, idx) => (
               <TableRow key={admin._id} hover sx={{ background: idx % 2 === 0 ? '#fff' : '#f9f4ee' }}>
                 <TableCell>{admin.firstName} {admin.lastName}</TableCell>
                 <TableCell>{admin.mobile}</TableCell>

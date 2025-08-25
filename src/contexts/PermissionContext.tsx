@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_URL } from '../services/api.ts';
 
 interface Permissions {
   users: { view: boolean; edit: boolean; delete: boolean };
@@ -42,7 +43,7 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return;
       }
 
-      const res = await axios.get('/api/admin/my-permissions', {
+      const res = await axios.get(`${API_URL}/admin/my-permissions`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

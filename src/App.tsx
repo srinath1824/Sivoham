@@ -135,7 +135,9 @@ function App({ navigate }: { navigate: any }) {
     <ErrorBoundary>
       <div className="app-container">
         <Navbar onLoginClick={handleLoginClick} user={user} onLogoutClick={handleLogout} />
-        <EventScrollBanner />
+        <ErrorBoundary>
+          <EventScrollBanner />
+        </ErrorBoundary>
         <LoginDialog open={loginOpen} onLoginSuccess={handleLogin} onClose={() => setLoginOpen(false)} />
         <Routes>
         <Route path="/" element={<Home />} />

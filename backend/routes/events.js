@@ -5,6 +5,20 @@ const { checkEventPermission } = require('../middleware/eventPermissions');
 
 const router = express.Router();
 
+// Get upcoming events for banner (public) - MUST be before other routes
+router.get('/upcoming-banner', async (req, res) => {
+  try {
+    const today = new Date();
+    const events = await Event.find({
+      date: { $gte: today },
+      showScrollBanner: true
+    }).sort({ date: 1 }).limit(3);
+    res.json(events);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get all events (public)
 router.get('/', async (req, res) => {
   try {
@@ -76,19 +90,7 @@ router.delete('/:id', auth, checkEventPermission('eventsManagement'), async (req
   }
 });
 
-// Get upcoming events for banner (public)
-router.get('/upcoming-banner', async (req, res) => {
-  try {
-    const today = new Date();
-    const events = await Event.find({
-      date: { $gte: today },
-      showScrollBanner: true
-    }).sort({ date: 1 }).limit(3);
-    res.json(events);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+
 
 // Toggle scroll banner visibility (events management permission required)
 router.patch('/:id/banner', auth, checkEventPermission('eventsManagement'), async (req, res) => {

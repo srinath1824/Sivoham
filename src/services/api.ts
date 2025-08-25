@@ -1,4 +1,9 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+export const API_URL = process.env.REACT_APP_API_URL || 'https://sks-server-production.up.railway.app/api';
+
+console.log('API Configuration:');
+console.log('- API_URL:', API_URL);
+console.log('- REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+console.log('- NODE_ENV:', process.env.NODE_ENV);
 
 /**
  * Check if we're in offline mode or have network issues

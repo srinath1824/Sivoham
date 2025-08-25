@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, MenuItem, TablePagination, Switch, FormControlLabel } from '@mui/material';
 import AdminFilters from './AdminFilters.tsx';
 import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
+import { API_URL } from '../../services/api.ts';
 
 export default function EventsManagement() {
   const [events, setEvents] = useState<any[]>([]);
@@ -22,9 +23,10 @@ export default function EventsManagement() {
   async function fetchEvents() {
     setLoading(true);
     try {
-      const res = await axios.get(`/api/events?page=${page + 1}&limit=${rowsPerPage}`);
-      setEvents(res.data.events || res.data);
-      setTotalCount(res.data.total || res.data.length);
+      const res = await axios.get(`${API_URL}/events?page=${page + 1}&limit=${rowsPerPage}`);
+      const eventsArray = Array.isArray(res.data.events) ? res.data.events : Array.isArray(res.data) ? res.data : [];
+      setEvents(eventsArray);
+      setTotalCount(res.data.total || eventsArray.length);
     } finally {
       setLoading(false);
     }
@@ -51,11 +53,11 @@ export default function EventsManagement() {
   async function handleSaveEdit() {
     try {
       if (isAddMode) {
-        await axios.post('/api/events', editForm, {
+        await axios.post(`${API_URL}/events`, editForm, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
       } else {
-        await axios.put(`/api/events/${editEvent._id}`, editForm, {
+        await axios.put(`${API_URL}/events/${editEvent._id}`, editForm, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
       }
@@ -77,7 +79,7 @@ export default function EventsManagement() {
   async function handleDelete(eventId: string) {
     if (!window.confirm('Are you sure you want to delete this event?')) return;
     try {
-      await axios.delete(`/api/events/${eventId}`, {
+      await axios.delete(`${API_URL}/events/${eventId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       fetchEvents();
@@ -88,7 +90,7 @@ export default function EventsManagement() {
 
   async function handleBannerToggle(eventId: string, showBanner: boolean) {
     try {
-      await axios.patch(`/api/events/${eventId}/banner`, 
+      await axios.patch(`${API_URL}/events/${eventId}/banner`, 
         { showScrollBanner: showBanner },
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
@@ -99,6 +101,7 @@ export default function EventsManagement() {
   }
 
   const filteredEvents = useMemo(() => {
+    if (!Array.isArray(events)) return [];
     return events.filter(event => {
       const eventName = event.name?.toLowerCase() || '';
       const description = event.description?.toLowerCase() || '';
@@ -117,7 +120,7 @@ export default function EventsManagement() {
 
   const filterOptions = [
     { key: 'name', label: 'Event Name', type: 'select' as const, options: [
-      ...events.map(event => ({ value: event._id, label: event.name }))
+      ...(Array.isArray(events) ? events.map(event => ({ value: event._id, label: event.name })) : [])
     ]},
     { key: 'description', label: 'Description', type: 'text' as const },
     { key: 'date', label: 'Date', type: 'date' as const }
@@ -172,7 +175,7 @@ export default function EventsManagement() {
           </TableHead>
           <TableBody>
             {filteredEvents.length === 0 && <TableRow><TableCell colSpan={6} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>No events found.</TableCell></TableRow>}
-            {filteredEvents.map((event, idx) => (
+            {Array.isArray(filteredEvents) && filteredEvents.map((event, idx) => (
               <TableRow key={event._id} hover sx={{ background: idx % 2 === 0 ? '#fff' : '#f9f4ee', '&:hover': { background: '#fff3e0' } }}>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333', fontWeight: 600 }}>{event.name}</TableCell>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333' }}>{event.date ? new Date(event.date).toLocaleDateString() : ''}</TableCell>

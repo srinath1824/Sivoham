@@ -7,6 +7,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import AdminFilters from './AdminFilters.tsx';
 import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 import QRCode from 'qrcode';
+import { API_URL } from '../../services/api.ts';
 
 export default function EventRegistrationsApproval() {
   const [registrations, setRegistrations] = useState<any[]>([]);
@@ -39,8 +40,8 @@ export default function EventRegistrationsApproval() {
 
   async function fetchEvents() {
     try {
-      const res = await axios.get('/api/events');
-      setEvents(res.data);
+      const res = await axios.get(`${API_URL}/events`);
+      setEvents(Array.isArray(res.data) ? res.data : []);
     } catch (err: any) {
       console.error('Failed to fetch events:', err);
     }
@@ -55,11 +56,14 @@ export default function EventRegistrationsApproval() {
         limit: rowsPerPage.toString(),
         ...filters
       });
-      const res = await axios.get(`/api/event-registrations?${params}`, config);
-      setRegistrations(res.data.registrations || res.data);
-      setTotalCount(res.data.total || res.data.length);
+      const res = await axios.get(`${API_URL}/event-registrations?${params}`, config);
+      const regsArray = Array.isArray(res.data.registrations) ? res.data.registrations : Array.isArray(res.data) ? res.data : [];
+      setRegistrations(regsArray);
+      setTotalCount(res.data.total || regsArray.length);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch event registrations');
+      setRegistrations([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -67,7 +71,7 @@ export default function EventRegistrationsApproval() {
 
   async function handleApprove(regId: string) {
     try {
-      await axios.put(`/api/event-registrations/${regId}/approve`, {}, config);
+      await axios.put(`${API_URL}/event-registrations/${regId}/approve`, {}, config);
       setEditingRegId(null);
       fetchRegistrations();
     } catch (err: any) {
@@ -77,7 +81,7 @@ export default function EventRegistrationsApproval() {
 
   async function handleReject(regId: string) {
     try {
-      await axios.put(`/api/event-registrations/${regId}/reject`, {}, config);
+      await axios.put(`${API_URL}/event-registrations/${regId}/reject`, {}, config);
       setEditingRegId(null);
       fetchRegistrations();
     } catch (err: any) {
@@ -90,7 +94,7 @@ export default function EventRegistrationsApproval() {
     if (selectedRegs.length === 0) return;
     if (!window.confirm(`Approve ${selectedRegs.length} selected registrations?`)) return;
     try {
-      await axios.post('/api/event-registrations/bulk-approve', { registrationIds: selectedRegs }, config);
+      await axios.post(`${API_URL}/event-registrations/bulk-approve`, { registrationIds: selectedRegs }, config);
       setSelectedRegs([]);
       fetchRegistrations();
     } catch (err: any) {
@@ -103,7 +107,7 @@ export default function EventRegistrationsApproval() {
     if (selectedRegs.length === 0) return;
     if (!window.confirm(`Reject ${selectedRegs.length} selected registrations?`)) return;
     try {
-      await axios.post('/api/event-registrations/bulk-reject', { registrationIds: selectedRegs }, config);
+      await axios.post(`${API_URL}/event-registrations/bulk-reject`, { registrationIds: selectedRegs }, config);
       setSelectedRegs([]);
       fetchRegistrations();
     } catch (err: any) {
@@ -261,7 +265,7 @@ Registrations will start by 8am
 
   const handleSaveTemplate = async () => {
     try {
-      await axios.put(`/api/events/${templateDialog.eventId}`, {
+      await axios.put(`${API_URL}/events/${templateDialog.eventId}`, {
         messageTemplate: editableTemplate
       }, config);
       setEvents(prev => prev.map(e => 
@@ -278,7 +282,7 @@ Registrations will start by 8am
 
   async function handleToggleWhatsappSent(regId: string) {
     try {
-      const response = await axios.put(`/api/event-registrations/${regId}/toggle-whatsapp`, {}, config);
+      const response = await axios.put(`${API_URL}/event-registrations/${regId}/toggle-whatsapp`, {}, config);
       // Update local state immediately
       setRegistrations(prev => prev.map(reg => 
         reg.registrationId === regId 
@@ -301,7 +305,7 @@ Registrations will start by 8am
 
   const filterOptions = [
     { key: 'event', label: 'Event', type: 'select' as const, options: [
-      ...events.map(event => ({ value: event._id, label: event.name }))
+      ...(Array.isArray(events) ? events.map(event => ({ value: event._id, label: event.name })) : [])
     ]},
     { key: 'name', label: 'Registrant Name', type: 'text' as const },
     { key: 'mobile', label: 'Mobile', type: 'text' as const },
@@ -393,7 +397,7 @@ Registrations will start by 8am
                     }}
                   >
                     <MenuItem value="" sx={{ fontSize: '0.8rem' }}>Default Template</MenuItem>
-                    {events.map((event) => (
+                    {Array.isArray(events) && events.map((event) => (
                       <MenuItem key={event._id} value={event._id} sx={{ fontSize: '0.8rem' }}>
                         🎉 {event.name}
                       </MenuItem>
@@ -459,7 +463,7 @@ Registrations will start by 8am
             {registrations.length === 0 && (
               <TableRow><TableCell colSpan={8} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>No registrations found.</TableCell></TableRow>
             )}
-            {registrations.map((reg, idx) => (
+            {Array.isArray(registrations) && registrations.map((reg, idx) => (
               <TableRow key={reg._id} hover sx={{ background: idx % 2 === 0 ? '#fff' : '#f9f4ee', '&:hover': { background: '#fff3e0' } }}>
 
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#333', fontWeight: 600 }}>{reg.eventId?.name}</TableCell>

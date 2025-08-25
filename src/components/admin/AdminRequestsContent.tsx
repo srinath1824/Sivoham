@@ -5,6 +5,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import AdminFilters from './AdminFilters.tsx';
 import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 import axios from 'axios';
+import { API_URL } from '../../services/api.ts';
 
 export default function AdminRequestsContent() {
   const [users, setUsers] = useState<any[]>([]);
@@ -29,15 +30,18 @@ export default function AdminRequestsContent() {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/admin/users?page=${page + 1}&limit=${rowsPerPage}`, {
+      const res = await fetch(`${API_URL}/admin/users?page=${page + 1}&limit=${rowsPerPage}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch users');
       const data = await res.json();
-      setUsers(data.users || data);
-      setTotalCount(data.total || data.length);
+      const usersArray = Array.isArray(data.users) ? data.users : Array.isArray(data) ? data : [];
+      setUsers(usersArray);
+      setTotalCount(data.total || usersArray.length);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch users');
+      setUsers([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -108,7 +112,7 @@ export default function AdminRequestsContent() {
     try {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.put(`/api/admin/users/${userId}/toggle-whatsapp`, {}, config);
+      const response = await axios.put(`${API_URL}/admin/users/${userId}/toggle-whatsapp`, {}, config);
       setUsers(prev => prev.map(user => 
         user._id === userId 
           ? { ...user, whatsappSent: response.data.whatsappSent }
@@ -148,6 +152,7 @@ export default function AdminRequestsContent() {
   }, []);
 
   const filteredUsers = useMemo(() => {
+    if (!Array.isArray(users)) return [];
     return users.filter(user => {
       const name = `${user.firstName} ${user.lastName}`.toLowerCase();
       const mobile = user.mobile?.toLowerCase() || '';
@@ -397,7 +402,7 @@ export default function AdminRequestsContent() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredUsers.map((user, idx) => (
+            {Array.isArray(filteredUsers) && filteredUsers.map((user, idx) => (
               <TableRow key={user._id} hover sx={{ background: idx % 2 === 0 ? '#fff' : '#f9f4ee', '&:hover': { background: '#fff3e0' } }}>
                 <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
                   {!user.isAdmin && (

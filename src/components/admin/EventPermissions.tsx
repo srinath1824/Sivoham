@@ -3,6 +3,7 @@ import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead
 import { Edit, Delete, PersonAdd } from '@mui/icons-material';
 import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 import axios from 'axios';
+import { API_URL } from '../../services/api.ts';
 
 interface EventAdmin {
   _id: string;
@@ -42,12 +43,13 @@ export default function EventPermissions() {
   const fetchEventAdmins = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/api/admin/event-admins', {
+      const res = await axios.get(`${API_URL}/admin/event-admins`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setEventAdmins(res.data);
+      setEventAdmins(Array.isArray(res.data) ? res.data : []);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch event admins');
+      setEventAdmins([]);
     }
   };
 
@@ -55,12 +57,14 @@ export default function EventPermissions() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/api/admin/all-users?limit=1000', {
+      const res = await axios.get(`${API_URL}/admin/all-users?limit=1000`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setAllUsers(res.data.users.filter((user: any) => user.role !== 'superadmin'));
+      const users = Array.isArray(res.data.users) ? res.data.users : Array.isArray(res.data) ? res.data : [];
+      setAllUsers(users.filter((user: any) => user.role !== 'superadmin'));
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch users');
+      setAllUsers([]);
     } finally {
       setLoading(false);
     }
@@ -71,7 +75,7 @@ export default function EventPermissions() {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.post('/api/admin/assign-event-permissions', {
+      await axios.post(`${API_URL}/admin/assign-event-permissions`, {
         userId: selectedUser._id,
         permissions
       }, {
@@ -93,7 +97,7 @@ export default function EventPermissions() {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/admin/update-event-permissions/${editDialog.user._id}`, {
+      await axios.put(`${API_URL}/admin/update-event-permissions/${editDialog.user._id}`, {
         permissions
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -116,7 +120,7 @@ export default function EventPermissions() {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`/api/admin/revoke-event-permissions/${revokeDialog.user._id}`, {
+      await axios.delete(`${API_URL}/admin/revoke-event-permissions/${revokeDialog.user._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -171,7 +175,7 @@ export default function EventPermissions() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {eventAdmins.map((admin, idx) => (
+            {Array.isArray(eventAdmins) && eventAdmins.map((admin, idx) => (
               <TableRow key={admin._id} hover sx={{ background: idx % 2 === 0 ? '#fff' : '#f9f4ee' }}>
                 <TableCell>{admin.firstName} {admin.lastName}</TableCell>
                 <TableCell>{admin.mobile}</TableCell>
@@ -241,7 +245,7 @@ export default function EventPermissions() {
           <Box sx={{ mb: 3 }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>Select User:</Typography>
             <Box sx={{ maxHeight: 200, overflow: 'auto', border: '1px solid #ddd', borderRadius: 1 }}>
-              {allUsers.map(user => (
+              {Array.isArray(allUsers) && allUsers.map(user => (
                 <Box
                   key={user._id}
                   onClick={() => setSelectedUser(user)}

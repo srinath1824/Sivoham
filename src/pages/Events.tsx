@@ -4,6 +4,7 @@ import { PAST_EVENTS, UPCOMING_EVENTS } from '../config/constants.ts';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
+import { API_URL } from '../services/api.ts';
 
 interface EventType {
   _id: string;
@@ -89,8 +90,8 @@ export default function Events() {
 
   const fetchRegisteredEvents = async (mobile: string) => {
     try {
-      const res = await axios.get(`/api/event-registrations/user/${mobile}`);
-      setRegisteredEvents(res.data);
+      const res = await axios.get(`${API_URL}/event-registrations/user/${mobile}`);
+      setRegisteredEvents(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       setRegisteredEvents([]);
     }
@@ -100,8 +101,8 @@ export default function Events() {
     async function fetchEvents() {
       setLoading(true);
       try {
-        const res = await axios.get('/api/events');
-        setEvents(res.data);
+        const res = await axios.get(`${API_URL}/events`);
+        setEvents(Array.isArray(res.data) ? res.data : []);
       } finally {
         setLoading(false);
       }
@@ -119,7 +120,7 @@ export default function Events() {
     async function refreshUser() {
       if (user && user._id && token && user.isSelected === false) {
         try {
-          const res = await fetch(`/api/user/${user._id}`, {
+          const res = await fetch(`${API_URL}/user/${user._id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (res.ok) {
@@ -228,7 +229,7 @@ export default function Events() {
         otherDetails: registerData.otherDetails && registerData.otherDetails.trim() !== '' ? registerData.otherDetails : null
       };
       console.log('Submitting registration payload:', payload); // Log payload
-      const res = await axios.post('/api/event-registrations', payload);
+      const res = await axios.post(`${API_URL}/event-registrations`, payload);
       setRegisterSuccess(`Registration successful! Your ID: ${res.data.registrationId} (Status: ${res.data.status})`);
       setRegisterOpen(false);
       if (registerData.mobile) fetchRegisteredEvents(registerData.mobile);
@@ -249,8 +250,8 @@ export default function Events() {
   };
 
   const now = new Date();
-  const upcomingEvents = events.filter(e => new Date(e.date) >= now);
-  const pastEvents = events.filter(e => new Date(e.date) < now);
+  const upcomingEvents = Array.isArray(events) ? events.filter(e => new Date(e.date) >= now) : [];
+  const pastEvents = Array.isArray(events) ? events.filter(e => new Date(e.date) < now) : [];
 
   return (
     <main className="main-content" style={{ minHeight: 'calc(100vh - 120px)', background: '#fff7f0', padding: '2rem 0 2rem 0' }}>
@@ -294,7 +295,7 @@ export default function Events() {
                       {upcomingEvents.length === 0 && (
                         <TableRow><TableCell colSpan={6}>No upcoming events at this time.</TableCell></TableRow>
                       )}
-                      {upcomingEvents.map((event: EventType) => (
+                      {Array.isArray(upcomingEvents) && upcomingEvents.map((event: EventType) => (
                         <TableRow key={event._id}>
                           <TableCell sx={{ fontFamily: 'Lora, serif' }}>{formatDateTime(event.date, event.startTime, event.endTime)}</TableCell>
                           <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif' }}>{event.name}</TableCell>
@@ -373,7 +374,7 @@ export default function Events() {
                       {pastEvents.length === 0 && (
                         <TableRow><TableCell colSpan={5}>No past events to display.</TableCell></TableRow>
                       )}
-                      {pastEvents.map((event: EventType) => (
+                      {Array.isArray(pastEvents) && pastEvents.map((event: EventType) => (
                         <TableRow key={event._id}>
                           <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.date ? formatDateTime(event.date, event.startTime, event.endTime) : '-'}</TableCell>
                           <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif' }}>{event.name}</TableCell>
@@ -412,7 +413,7 @@ export default function Events() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {registeredEvents.map((reg: RegistrationType) => (
+                    {Array.isArray(registeredEvents) && registeredEvents.map((reg: RegistrationType) => (
                       <TableRow key={reg._id}>
                         <TableCell sx={{ fontWeight: 600, color: '#de6b2f', fontFamily: 'Lora, serif' }}>{reg.eventId?.name}</TableCell>
                         <TableCell sx={{ fontFamily: 'Lora, serif' }}>{reg.eventId?.date ? formatDateTime(reg.eventId.date, reg.eventId.startTime, reg.eventId.endTime) : '-'}</TableCell>
@@ -487,10 +488,10 @@ export default function Events() {
             <TextField label="Profession (optional)" name="profession" value={registerData.profession} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} disabled={registerData.forWhom === 'self'} />
             <TextField label="Address" name="address" value={registerData.address} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required disabled={registerData.forWhom === 'self'} />
             <TextField label="Which level have you completed in SKS" name="sksLevel" value={registerData.sksLevel} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required select>
-              {SKS_LEVELS.map(level => <MenuItem key={level} value={level}>{level}</MenuItem>)}
+              {Array.isArray(SKS_LEVELS) && SKS_LEVELS.map(level => <MenuItem key={level} value={level}>{level}</MenuItem>)}
             </TextField>
             <TextField label="Would you like to share your SKS Miracles" name="sksMiracle" value={registerData.sksMiracle} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required select>
-              {SKS_MIRACLES.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+              {Array.isArray(SKS_MIRACLES) && SKS_MIRACLES.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
             </TextField>
             <TextField label="Any other details" name="otherDetails" value={registerData.otherDetails} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} multiline minRows={2} />
           </DialogContent>

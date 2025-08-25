@@ -29,6 +29,7 @@ import {
   getKey,
 } from '../config/constants.ts';
 import courseConfig from '../config/courseConfig.ts';
+import { API_URL } from '../services/api.ts';
 
 const initialProgress: Record<
   string,
@@ -161,7 +162,7 @@ const Progress: React.FC = () => {
     async function refreshUser() {
       if (user && user._id && token && user.isSelected === false) {
         try {
-          const res = await fetch(`/api/user/${user._id}`, {
+          const res = await fetch(`${API_URL}/user/${user._id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (res.ok) {

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography, Button, Alert, Paper, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { Event, Person, Cake, Work, School, CheckCircle, LocationOn, Group, CalendarToday } from '@mui/icons-material';
-import { markAttendance } from '../../services/api.ts';
+import { markAttendance, API_URL } from '../../services/api.ts';
 import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 import axios from 'axios';
 import jsQR from 'jsqr';
@@ -139,7 +139,7 @@ export default function BarcodeScanner() {
 
     try {
       const trimmedId = registrationId.trim();
-      const registration = eventRegistrations.find(reg => reg.registrationId === trimmedId);
+      const registration = Array.isArray(eventRegistrations) ? eventRegistrations.find(reg => reg.registrationId === trimmedId) : null;
       
       if (!registration) {
         setMessage('❌ Unauthorized: User not registered or approved for this event');
@@ -238,11 +238,12 @@ export default function BarcodeScanner() {
   async function fetchEvents() {
     setLoading(true);
     try {
-      const res = await axios.get('/api/events');
-      setEvents(res.data);
+      const res = await axios.get(`${API_URL}/events`);
+      setEvents(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       setMessage('Failed to fetch events');
       setMessageType('error');
+      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -251,8 +252,8 @@ export default function BarcodeScanner() {
   async function fetchEventRegistrations() {
     setLoading(true);
     try {
-      const res = await axios.get('/api/event-registrations/all?limit=1000', config);
-      const registrations = res.data.registrations || res.data;
+      const res = await axios.get(`${API_URL}/event-registrations/all?limit=1000`, config);
+      const registrations = Array.isArray(res.data.registrations) ? res.data.registrations : Array.isArray(res.data) ? res.data : [];
       const filtered = registrations.filter((reg: any) => 
         reg.eventId?._id === selectedEvent && reg.status === 'approved'
       );
@@ -260,6 +261,7 @@ export default function BarcodeScanner() {
     } catch (err) {
       setMessage('Failed to fetch event registrations');
       setMessageType('error');
+      setEventRegistrations([]);
     } finally {
       setLoading(false);
     }
@@ -317,7 +319,7 @@ export default function BarcodeScanner() {
           sx={{ mb: 3 }}
         >
           <MenuItem value="">Select an event</MenuItem>
-          {events.map((event) => (
+          {Array.isArray(events) && events.map((event) => (
             <MenuItem key={event._id} value={event._id}>
               {event.name} - {event.date ? new Date(event.date).toLocaleDateString() : ''}
             </MenuItem>
@@ -327,10 +329,10 @@ export default function BarcodeScanner() {
         {selectedEvent && (
           <Box sx={{ mb: 3, p: 2, bgcolor: '#fff3e0', borderRadius: 2 }}>
             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-              Approved Registrations: {eventRegistrations.length}
+              Approved Registrations: {Array.isArray(eventRegistrations) ? eventRegistrations.length : 0}
             </Typography>
             <Typography variant="body2" sx={{ color: '#666' }}>
-              Attended: {eventRegistrations.filter(r => r.attended === true).length}
+              Attended: {Array.isArray(eventRegistrations) ? eventRegistrations.filter(r => r.attended === true).length : 0}
             </Typography>
           </Box>
         )}

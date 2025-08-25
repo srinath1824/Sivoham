@@ -15,7 +15,7 @@ import {
   COURSE_ACCESS_WINDOWS,
 } from '../config/constants.ts';
 import courseConfig from '../config/courseConfig.ts';
-import { login as apiLogin, register as apiRegister, updateProgress, getProgress } from '../services/api.ts';
+import { login as apiLogin, register as apiRegister, updateProgress, getProgress, API_URL } from '../services/api.ts';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -273,7 +273,7 @@ const Courses = () => {
     async function refreshUser() {
       if (user && user._id && token) {
         try {
-          const res = await fetch(`/api/user/${user._id}`, {
+          const res = await fetch(`${API_URL}/user/${user._id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (res.ok) {

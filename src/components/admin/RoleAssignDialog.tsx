@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Autocomplete, Box, Typography } from '@mui/material';
 import PermissionMatrix from './PermissionMatrix.tsx';
 import axios from 'axios';
+import { API_URL } from '../../services/api.ts';
 
 interface User {
   _id: string;
@@ -32,7 +33,7 @@ export default function RoleAssignDialog({ open, onClose, onSuccess }: RoleAssig
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/api/admin/all-users?limit=1000', {
+      const res = await axios.get(`${API_URL}/admin/all-users?limit=1000`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Filter out existing admins
@@ -49,7 +50,7 @@ export default function RoleAssignDialog({ open, onClose, onSuccess }: RoleAssig
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post('/api/admin/assign-role', {
+      await axios.post(`${API_URL}/admin/assign-role`, {
         userId: selectedUser._id,
         permissions
       }, {

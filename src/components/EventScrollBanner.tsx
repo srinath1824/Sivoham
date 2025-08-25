@@ -8,6 +8,7 @@ interface Event {
   date: string;
   location: string;
   showScrollBanner: boolean;
+  registrationDeadline?: string;
 }
 
 export default function EventScrollBanner() {
@@ -20,13 +21,20 @@ export default function EventScrollBanner() {
 
   const fetchUpcomingEvents = async () => {
     try {
-      const response = await fetch('/api/events/upcoming-banner');
+      const { API_URL } = await import('../services/api.ts');
+      const response = await fetch(`${API_URL}/events/upcoming-banner`);
       if (response.ok) {
         const data = await response.json();
-        setEvents(data.filter((event: Event) => event.showScrollBanner));
+        if (Array.isArray(data)) {
+          setEvents(data.filter((event: Event) => event.showScrollBanner));
+        } else {
+          console.error('API response is not an array:', data);
+          setEvents([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching upcoming events:', error);
+      setEvents([]);
     }
   };
 

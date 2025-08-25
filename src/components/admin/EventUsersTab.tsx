@@ -5,6 +5,7 @@ import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
 import { Download } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 import AdminFilters from './AdminFilters.tsx';
+import { API_URL } from '../../services/api.ts';
 
 export default function EventUsersTab() {
   const [registrations, setRegistrations] = useState<any[]>([]);
@@ -28,13 +29,16 @@ export default function EventUsersTab() {
         limit: rowsPerPage.toString(),
         ...filters
       });
-      const res = await axios.get(`/api/event-registrations/all?${params}`, { 
+      const res = await axios.get(`${API_URL}/event-registrations/all?${params}`, { 
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } 
       });
-      setRegistrations(res.data.registrations || res.data);
-      setTotalCount(res.data.total || res.data.length);
+      const regsArray = Array.isArray(res.data.registrations) ? res.data.registrations : Array.isArray(res.data) ? res.data : [];
+      setRegistrations(regsArray);
+      setTotalCount(res.data.total || regsArray.length);
     } catch (err: any) {
       console.error('Failed to fetch data:', err);
+      setRegistrations([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -47,8 +51,8 @@ export default function EventUsersTab() {
 
   async function fetchEvents() {
     try {
-      const res = await axios.get('/api/events');
-      setEvents(res.data);
+      const res = await axios.get(`${API_URL}/events`);
+      setEvents(Array.isArray(res.data) ? res.data : []);
     } catch (err: any) {
       console.error('Failed to fetch events:', err);
     }
@@ -56,7 +60,7 @@ export default function EventUsersTab() {
 
   async function handleApprove(regId: string) {
     try {
-      await axios.put(`/api/event-registrations/${regId}/approve`, {}, config);
+      await axios.put(`${API_URL}/event-registrations/${regId}/approve`, {}, config);
       setEditingRegId(null);
       fetchData();
     } catch (err: any) {
@@ -66,7 +70,7 @@ export default function EventUsersTab() {
 
   async function handleReject(regId: string) {
     try {
-      await axios.put(`/api/event-registrations/${regId}/reject`, {}, config);
+      await axios.put(`${API_URL}/event-registrations/${regId}/reject`, {}, config);
       setEditingRegId(null);
       fetchData();
     } catch (err: any) {
@@ -78,7 +82,7 @@ export default function EventUsersTab() {
     if (selectedRegs.length === 0) return;
     if (!window.confirm(`Approve ${selectedRegs.length} selected registrations?`)) return;
     try {
-      await axios.post('/api/event-registrations/bulk-approve', { registrationIds: selectedRegs }, config);
+      await axios.post(`${API_URL}/event-registrations/bulk-approve`, { registrationIds: selectedRegs }, config);
       setSelectedRegs([]);
       fetchData();
     } catch (err: any) {
@@ -90,7 +94,7 @@ export default function EventUsersTab() {
     if (selectedRegs.length === 0) return;
     if (!window.confirm(`Reject ${selectedRegs.length} selected registrations?`)) return;
     try {
-      await axios.post('/api/event-registrations/bulk-reject', { registrationIds: selectedRegs }, config);
+      await axios.post(`${API_URL}/event-registrations/bulk-reject`, { registrationIds: selectedRegs }, config);
       setSelectedRegs([]);
       fetchData();
     } catch (err: any) {
@@ -114,7 +118,7 @@ export default function EventUsersTab() {
     );
   };
 
-  const filteredRegistrations = registrations;
+  const filteredRegistrations = Array.isArray(registrations) ? registrations : [];
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -125,7 +129,7 @@ export default function EventUsersTab() {
     try {
       setLoading(true);
       const params = new URLSearchParams(filters);
-      const res = await axios.get(`/api/event-registrations/export?${params}`, config);
+      const res = await axios.get(`${API_URL}/event-registrations/export?${params}`, config);
       
       if (!res.data || !res.data.registrations) {
         throw new Error('No data received from server');
@@ -197,7 +201,7 @@ export default function EventUsersTab() {
 
   const filterOptions = [
     { key: 'event', label: 'Event', type: 'select' as const, options: [
-      ...events.map(event => ({ value: event._id, label: event.name }))
+      ...(Array.isArray(events) ? events.map(event => ({ value: event._id, label: event.name })) : [])
     ]},
     { key: 'name', label: 'User Name', type: 'text' as const },
     { key: 'mobile', label: 'Mobile', type: 'text' as const },
@@ -286,7 +290,7 @@ export default function EventUsersTab() {
             </TableHead>
             <TableBody>
               {filteredRegistrations.length === 0 && <TableRow><TableCell colSpan={8} sx={{ textAlign: 'center', py: 3, color: '#666', fontStyle: 'italic' }}>No users found.</TableCell></TableRow>}
-              {filteredRegistrations.map((reg: any, idx: number) => (
+              {Array.isArray(filteredRegistrations) && filteredRegistrations.map((reg: any, idx: number) => (
                 <TableRow key={reg.registrationId} hover sx={{ background: idx % 2 === 0 ? '#fff' : '#f9f4ee', '&:hover': { background: '#fff3e0' } }}>
                   <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
                     <Checkbox 
