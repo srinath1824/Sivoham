@@ -301,7 +301,7 @@ export default function Join({ handleLogin }) {
                     lineHeight: 1.7
                   }}
                 >
-                  Siva Kundalini Sadhana, taught by Poojya Gurudev Sri Jeeveswara Yogi, is the safest and structured approach to Kundalini Awakening through Samadhi Meditation. This priceless knowledge is offered for Free to everyone.
+                  Siva Kundalini Sadhana, taught by Poojya Gurudev Sree Jeeveswara Yogi, is the safest and structured approach to Kundalini Awakening through Samadhi Meditation. This priceless knowledge is offered for Free to everyone.
                   Please fill-in your details for you to get registered for Siva Kundalini Sadhana Classes.
                 </Typography>
                 <Typography 

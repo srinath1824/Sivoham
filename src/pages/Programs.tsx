@@ -3,10 +3,11 @@ import Grid from '@mui/material/Grid';
 import { Box, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
 
-/**
- *
- */
-export default function Programs() {
+interface ProgramsProps {
+  user?: any;
+}
+
+export default function Programs({ user }: ProgramsProps) {
   return (
     <main className="main-content programs-bg">
       <Grid
@@ -198,28 +199,30 @@ export default function Programs() {
         </Grid>
       </Grid>
       {/* Join Now Button */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6, mb: 2 }}>
-        <Link
-          to="/join"
-          style={{
-            background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)',
-            color: '#fff',
-            fontFamily: 'Lora, serif',
-            fontWeight: 700,
-            fontSize: '1.15rem',
-            padding: '12px 40px',
-            border: 'none',
-            borderRadius: 24,
-            textDecoration: 'none',
-            boxShadow: '0 2px 12px rgba(222,107,47,0.10)',
-            transition: 'background 0.2s',
-            cursor: 'pointer',
-            letterSpacing: 0.5,
-          }}
-        >
-          Join Now
-        </Link>
-      </Box>
+      {!user && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6, mb: 2 }}>
+          <Link
+            to="/join"
+            style={{
+              background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)',
+              color: '#fff',
+              fontFamily: 'Lora, serif',
+              fontWeight: 700,
+              fontSize: '1.15rem',
+              padding: '12px 40px',
+              border: 'none',
+              borderRadius: 24,
+              textDecoration: 'none',
+              boxShadow: '0 2px 12px rgba(222,107,47,0.10)',
+              transition: 'background 0.2s',
+              cursor: 'pointer',
+              letterSpacing: 0.5,
+            }}
+          >
+            Join Now
+          </Link>
+        </Box>
+      )}
       {/* Lotus SVG background for mobile */}
       <Box
         sx={{

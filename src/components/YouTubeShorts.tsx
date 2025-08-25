@@ -23,8 +23,9 @@ export default function YouTubeShorts() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const { t } = useTranslation();
 
-  // YouTube API configuration - replace with your API key and channel handle
+  // YouTube API configuration
   const YOUTUBE_API_KEY = process.env.REACT_APP_YOUTUBE_API_KEY || '';
+  const PLAYLIST_ID = process.env.REACT_APP_YOUTUBE_PLAYLIST_ID || '';
   const CHANNEL_HANDLE = process.env.REACT_APP_YOUTUBE_CHANNEL_HANDLE || 'SivaKundaliniSadhanaChannel';
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export default function YouTubeShorts() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, [YOUTUBE_API_KEY, CHANNEL_HANDLE]);
+  }, [YOUTUBE_API_KEY, PLAYLIST_ID, CHANNEL_HANDLE]);
 
   const fetchYouTubeShorts = useCallback(async () => {
     if (!YOUTUBE_API_KEY || !CHANNEL_HANDLE) {
@@ -59,10 +60,10 @@ export default function YouTubeShorts() {
       
       const channelId = channelData.items[0].id;
       
-      // Then fetch videos
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&channelId=${channelId}&part=snippet&order=date&maxResults=25&type=video&videoDuration=short`
-      );
+      // Fetch videos from playlist or channel
+      const response = PLAYLIST_ID 
+        ? await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?key=${YOUTUBE_API_KEY}&playlistId=${PLAYLIST_ID}&part=snippet&maxResults=25`)
+        : await fetch(`https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&channelId=${channelId}&part=snippet&order=date&maxResults=25&type=video&videoDuration=short`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch YouTube videos');
@@ -70,14 +71,17 @@ export default function YouTubeShorts() {
 
       const data = await response.json();
       
-      const videoList: YouTubeVideo[] = data.items.map((item: any) => ({
-        id: item.id.videoId,
-        title: item.snippet.title,
-        thumbnail: item.snippet.thumbnails.medium.url,
-        publishedAt: item.snippet.publishedAt,
-        channelTitle: item.snippet.channelTitle,
-        videoUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`
-      }));
+      const videoList: YouTubeVideo[] = data.items.map((item: any) => {
+        const videoId = PLAYLIST_ID ? item.snippet.resourceId.videoId : item.id.videoId;
+        return {
+          id: videoId,
+          title: item.snippet.title,
+          thumbnail: item.snippet.thumbnails.medium.url,
+          publishedAt: item.snippet.publishedAt,
+          channelTitle: item.snippet.channelTitle,
+          videoUrl: `https://www.youtube.com/watch?v=${videoId}`
+        };
+      });
 
       setVideos(videoList);
     } catch (err: any) {
@@ -85,7 +89,7 @@ export default function YouTubeShorts() {
     } finally {
       setLoading(false);
     }
-  }, [YOUTUBE_API_KEY, CHANNEL_HANDLE]);
+  }, [YOUTUBE_API_KEY, PLAYLIST_ID, CHANNEL_HANDLE]);
 
   const handleVideoClick = (video: YouTubeVideo) => {
     setSelectedVideo(video);
@@ -139,7 +143,7 @@ export default function YouTubeShorts() {
             textAlign: 'left'
           }}
         >
-          Some experiences of those who attended Siva Kundalini Sadhana programs.
+          {t('home.youtubeTestimonialsDescription')}
         </Typography>
       </Box>
 

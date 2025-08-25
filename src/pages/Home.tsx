@@ -90,7 +90,11 @@ function AnimatedImage({ src, alt, className, ...props }: React.ImgHTMLAttribute
   );
 }
 
-export default function Home() {
+interface HomeProps {
+  user?: any;
+}
+
+export default function Home({ user }: HomeProps) {
   const { t } = useTranslation();
   const location = useLocation();
   const [showBadge, setShowBadge] = useState(true);
@@ -116,6 +120,19 @@ export default function Home() {
       console.error = originalError;
     };
   }, [registered]);
+
+  useEffect(() => {
+    // Handle scrolling to section on page load
+    const hash = location.hash;
+    if (hash) {
+      setTimeout(() => {
+        const element = document.getElementById(hash.replace('#', ''));
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, [location.hash]);
   return (
     <main className="main-content">
       {showBadge && registered === true && (
@@ -130,14 +147,12 @@ export default function Home() {
           <div className="home-hero-row">
             <div className="home-hero-text">
               <h1 className="home-title">{t('home.title')}</h1>
-              <p className="home-description">
-                {t('home.description')}
-              </p>
+              <p className="home-description" dangerouslySetInnerHTML={{ __html: t('home.description') }}></p>
             </div>
             <AnimatedImage src="/images/guruji_Rays.png" alt={t('home.heroImageAlt')} className="" />
           </div>
         </div>
-        <Link to="/join" className="home-cta">{t('home.joinNow')}</Link>
+        {!user && <Link to="/join" className="home-cta">{t('home.joinNow')}</Link>}
       </section>
       {/* About Section */}
       <section id="about" className="home-section" style={{ background: '#ffff', padding: '2rem 0' }}>
@@ -148,8 +163,8 @@ export default function Home() {
           <div className="mission-text">
             <h2 className="mission-heading">{t('home.aboutHeading')}</h2>
             <div className="card mission-card">
-              <p>{t('home.aboutParagraph1')}</p>
-              <p style={{marginTop: '1rem'}}>{t('home.aboutParagraph2')}</p>
+              <p dangerouslySetInnerHTML={{ __html: t('home.aboutParagraph1') }}></p>
+              <p style={{marginTop: '1rem'}} dangerouslySetInnerHTML={{ __html: t('home.aboutParagraph2') }}></p>
             </div>
           </div>
         </div>
@@ -160,9 +175,9 @@ export default function Home() {
           <div className="mission-text">
             <h2 className="mission-heading">{t('home.whyHeading')}</h2>
             <div className="card mission-card">
-              <p>{t('home.whyParagraph1')}</p>
-              <p style={{marginTop: '1rem'}}>{t('home.whyParagraph2')}</p>
-              <p style={{marginTop: '1rem'}}>{t('home.whyParagraph3')}</p>
+              <p dangerouslySetInnerHTML={{ __html: t('home.whyParagraph1') }}></p>
+              <p style={{marginTop: '1rem'}} dangerouslySetInnerHTML={{ __html: t('home.whyParagraph2') }}></p>
+              <p style={{marginTop: '1rem'}} dangerouslySetInnerHTML={{ __html: t('home.whyParagraph3') }}></p>
             </div>
           </div>
           <div className="mission-image-bg">
@@ -173,7 +188,7 @@ export default function Home() {
       {/* Programs Section */}
       <section id="programs">
         <Suspense fallback={<SectionLoader />}>
-          <Programs />
+          <Programs user={user} />
         </Suspense>
       </section>
       {/* Gallery Section */}
@@ -189,8 +204,8 @@ export default function Home() {
           <Testimonials />
         </Suspense>
       </section> */}
-      {/* YouTube Videos Section */}
-      <section id="youtube-videos" style={{ background: '#fff7f0', padding: '2rem' }}>
+      {/* Testimonials Section */}
+      <section id="testimonials" style={{ background: '#fff7f0', padding: '2rem' }}>
         <Suspense fallback={<SectionLoader />}>
           <YouTubeShorts />
         </Suspense>

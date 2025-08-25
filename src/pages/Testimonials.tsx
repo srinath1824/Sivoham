@@ -39,7 +39,7 @@ export default function Testimonials() {
           mb: 4,
         }}
       >
-        Some experiences of those who attended Siva Kundalini Sadhana programs.
+        Experience the power of real-life journeys shared by SKS Sadhaks. In this playlist, you will find amazing miracles, heartfelt stories, divine experiences, and personal transformations that reflect the grace of Pujya Gurudev Sree Jeeveswara Yogi. Each testimonial is a window into how faith, devotion, and inner connection bring peace, healing, and strength in life.Some experiences of those who attended Siva Kundalini Sadhana programs.
       </Typography>
       {isMobile ? (
         <div style={{ position: 'relative' }}>

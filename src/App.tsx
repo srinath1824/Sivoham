@@ -140,7 +140,7 @@ function App({ navigate }: { navigate: any }) {
         </ErrorBoundary>
         <LoginDialog open={loginOpen} onLoginSuccess={handleLogin} onClose={() => setLoginOpen(false)} />
         <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home user={user} />} />
         <Route path="/join" element={<Join handleLogin={handleLogin} />} />
         <Route path="/events" element={
           <ErrorBoundary>

@@ -22,7 +22,7 @@
 
 **Vision**: To make authentic spiritual teachings accessible to seekers worldwide through a comprehensive digital platform that combines traditional wisdom with modern technology.
 
-**Mission**: Guided by Parama Pujya Sri Jeeveswara Yogi's teachings, we provide a structured, safe, and experiential approach to Kundalini awakening and spiritual growth.
+**Mission**: Guided by Parama Pujya Sree Jeeveswara Yogi's teachings, we provide a structured, safe, and experiential approach to Kundalini awakening and spiritual growth.
 
 ```mermaid
 mindmap
@@ -510,13 +510,13 @@ graph TD
 
 ### **Spiritual Transformation Stories**
 
-> *"I spent many years in Himalayas and travelled across India in pursuit of Moksha. I met many Siddha Gurus and realized that even though they have so many powers they themselves are not liberated. Only a self-experienced person can guide others to the path of liberation. When I heard of Guru Sri Jeeveswara Yogi I immediately rushed down to meet him. I experienced him as one of the rarest Advaitha Shaktipath Guru and we cannot find one like him anywhere else in this era."*  
+> *"I spent many years in Himalayas and travelled across India in pursuit of Moksha. I met many Siddha Gurus and realized that even though they have so many powers they themselves are not liberated. Only a self-experienced person can guide others to the path of liberation. When I heard of Guru Sree Jeeveswara Yogi I immediately rushed down to meet him. I experienced him as one of the rarest Advaitha Shaktipath Guru and we cannot find one like him anywhere else in this era."*  
 > **— Ramananda Swami, Sanyasi, Badrinath**
 
-> *"Parama Pujya Sri Jeeveswara Yogi is none the less than Dakshinamurthy himself disguised as a common man incarnated to uplift ignorant people like us with boundless Compassion. We might have made great Punya in our past lives which lead us to learn such a wonderful sadhana today. To describe his greatness it is as difficult as trying to hold an ocean in a small vessel. He is Shiva himself."*  
+> *"Parama Pujya Sree Jeeveswara Yogi is none the less than Dakshinamurthy himself disguised as a common man incarnated to uplift ignorant people like us with boundless Compassion. We might have made great Punya in our past lives which lead us to learn such a wonderful sadhana today. To describe his greatness it is as difficult as trying to hold an ocean in a small vessel. He is Shiva himself."*  
 > **— Mrs. Rajya Lakshmi, Retd. Teacher**
 
-> *"I have read a lot of books on Kundalini and many Upanishads. However, there is only a mention of how to do and what to do in them. There is no one to teach the same to you practically. Sri Jeeveswara Yogi is imparting that practical knowledge whole heartedly without expecting anything from us. Guruji's intention is that everyone should get the knowledge from him and become like him."*  
+> *"I have read a lot of books on Kundalini and many Upanishads. However, there is only a mention of how to do and what to do in them. There is no one to teach the same to you practically. Sree Jeeveswara Yogi is imparting that practical knowledge whole heartedly without expecting anything from us. Guruji's intention is that everyone should get the knowledge from him and become like him."*  
 > **— Mr. Suresh Kalimahanthi, IT Professional, USA**
 
 ---
@@ -632,7 +632,7 @@ graph TD
 
 ## 🙏 Acknowledgments
 
-**Gratitude to Parama Pujya Sri Jeeveswara Yogi** for providing the authentic spiritual foundation that makes this platform possible.
+**Gratitude to Parama Pujya Sree Jeeveswara Yogi** for providing the authentic spiritual foundation that makes this platform possible.
 
 **Thanks to the Development Team** for creating a robust, scalable, and user-friendly platform that serves the spiritual community.
 
@@ -641,7 +641,7 @@ graph TD
 ---
 
 *"This Divine Knowledge and experience is of immense value which cannot be paid. Hence it is offered Free of cost."*  
-**— Parama Pujya Sri Jeeveswara Yogi**
+**— Parama Pujya Sree Jeeveswara Yogi**
 
 ---
 

@@ -1,9 +1,10 @@
 import React from 'react';
-
+import { useTranslation } from 'react-i18next';
 /**
  *
  */
 export default function Footer() {
+  const { t } = useTranslation();
   return (
     <footer className="footer">
       <div className="footer-inner">
@@ -101,9 +102,9 @@ export default function Footer() {
                 </svg>
                 <div style={{ lineHeight: '1.4', textAlign: window.innerWidth < 768 ? 'center' : 'left' }}>
                   <div style={{ marginBottom: '0.5rem' }}>
-                    Siva Kundalini Ashram, Shamshabad, Malkaram, Next to KBR cricket ground, Telangana - 509217
+                    {t('home.ashramLocation')}
                   </div>
-                  <a 
+                  {/* <a 
                     href="https://www.google.com/maps?q=17.250167,78.270917" 
                     target="_blank" 
                     rel="noopener noreferrer"
@@ -118,7 +119,7 @@ export default function Footer() {
                     }}
                   >
                     📍 Location on Map
-                  </a>
+                  </a> */}
                 </div>
               </div>
               <div className="footer-socials" style={{

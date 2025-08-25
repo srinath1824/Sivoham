@@ -44,7 +44,7 @@ export default function EventScrollBanner() {
   const eventDate = new Date(upcomingEvent.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const registrationDeadline = upcomingEvent.registrationDeadline ? new Date(upcomingEvent.registrationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
   
-  const scrollText = `🕉️ Come and receive the Divine Blessings of Parama pujya Sri Jeeveswara yogi 🙏 | 🎉 Upcoming Event: ${upcomingEvent.name} | 📍 ${upcomingEvent.location} | 📅 ${eventDate} | ✨ Visit Events page to register and be part of this sacred gathering | ${registrationDeadline ? `⏰ Registration closes: ${registrationDeadline} |` : ''} 🌟 Experience spiritual transformation and inner awakening 🕉️           `;
+  const scrollText = `🕉️ Come and receive the Divine Blessings of Parama pujya Sree Jeeveswara Yogi 🙏 | 🎉 Upcoming Event: ${upcomingEvent.name} | 📍 ${upcomingEvent.location} | 📅 ${eventDate} | ✨ Visit Events page to register and be part of this sacred gathering | ${registrationDeadline ? `⏰ Registration closes: ${registrationDeadline} |` : ''} 🌟 Experience spiritual transformation and inner awakening 🕉️           `;
 
   return (
     <Box

@@ -56,11 +56,12 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
   // Handler for anchor links
   const handleAnchorNav = (hash: string) => (e: React.MouseEvent) => {
     e.preventDefault();
-    navigate('/');
-    setTimeout(() => {
+    if (window.location.pathname === '/') {
       const el = document.getElementById(hash.replace('#', ''));
       if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    } else {
+      navigate('/' + hash);
+    }
   };
 
   return (
@@ -68,12 +69,14 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
       {/* Main Header: Logo and Brand */}
       <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider', display: { xs: 'flex', md: 'none' }, top: 0, zIndex: 1201 }}>
         <Toolbar sx={{ minHeight: 64, px: { xs: 1, md: 3 }, display: 'flex', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <img src="/images/SKS_Logo_4K-1.png" alt="Logo" style={{ height: 36, width: 'auto' }} />
-            <Typography variant="h6" sx={{ fontFamily: "'Lora', serif", fontWeight: 600, color: '#1a2341', letterSpacing: 1, fontSize: { xs: '1.1rem', md: '1.4rem' } }}>
-              {t('welcome')}
-            </Typography>
-          </Box>
+          <Link to="/" onClick={() => window.scrollTo(0, 0)} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <img src="/images/SKS_Logo_4K-1.png" alt="Logo" style={{ height: 36, width: 'auto' }} />
+              <Typography variant="h6" sx={{ fontFamily: "'Lora', serif", fontWeight: 600, color: '#1a2341', letterSpacing: 1, fontSize: { xs: '1.1rem', md: '1.4rem' } }}>
+                {t('welcome')}
+              </Typography>
+            </Box>
+          </Link>
           {/* Hamburger for mobile */}
           <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
             <IconButton edge="end" color="inherit" aria-label="menu" onClick={() => setDrawerOpen(true)}>
@@ -189,7 +192,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
         <Toolbar sx={{ minHeight: 40, px: { xs: 1, md: 3 }, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
           {filteredNavLinks.filter(link => ['nav.home', 'nav.about', 'nav.programs', 'nav.courses'].includes(link.name)).map(link => (
             link.to.startsWith('/') ? (
-              <Link key={link.to} to={link.to} style={{ textDecoration: 'none', color: '#1a2341', fontWeight: 500, fontSize: 15, padding: '6px 12px', borderRadius: 4, transition: 'background 0.2s', marginRight: 2 }}>
+              <Link key={link.to} to={link.to} onClick={link.to === '/' ? () => window.scrollTo(0, 0) : undefined} style={{ textDecoration: 'none', color: '#1a2341', fontWeight: 500, fontSize: 15, padding: '6px 12px', borderRadius: 4, transition: 'background 0.2s', marginRight: 2 }}>
                 {t(link.name)}
               </Link>
             ) : (
@@ -208,16 +211,18 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
       {/* Desktop header for md+ */}
       <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider', display: { xs: 'none', md: 'flex' }, top: 0, zIndex: 1201 }}>
         <Toolbar sx={{ minHeight: 64, px: 3, display: 'flex', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <img src="/images/SKS_Logo_4K-1.png" alt="Logo" style={{ height: 36, width: 'auto' }} />
-            <Typography variant="h6" sx={{ fontFamily: "'Lora', serif", fontWeight: 600, color: '#1a2341', letterSpacing: 1, fontSize: '1.4rem' }}>
-              {t('welcome')}
-            </Typography>
-          </Box>
+          <Link to="/" onClick={() => window.scrollTo(0, 0)} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <img src="/images/SKS_Logo_4K-1.png" alt="Logo" style={{ height: 36, width: 'auto' }} />
+              <Typography variant="h6" sx={{ fontFamily: "'Lora', serif", fontWeight: 600, color: '#1a2341', letterSpacing: 1, fontSize: '1.4rem' }}>
+                {t('welcome')}
+              </Typography>
+            </Box>
+          </Link>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flex: 1, justifyContent: 'center' }}>
             {filteredNavLinks.map(link => (
               link.to.startsWith('/') ? (
-                <Link key={link.to} to={link.to} style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500, fontSize: 16, padding: '8px 16px' }}>
+                <Link key={link.to} to={link.to} onClick={link.to === '/' ? () => window.scrollTo(0, 0) : undefined} style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500, fontSize: 16, padding: '8px 16px' }}>
                   {t(link.name)}
                 </Link>
               ) : (

@@ -23,7 +23,7 @@
 
 ## 🎯 Overview
 
-Sivoham is a comprehensive spiritual growth platform built with React and TypeScript, designed to provide authentic Kundalini Yoga teachings from Parama Pujya Sri Jeeveswara Yogi. The platform offers structured courses, event management, progress tracking, and community features.
+Sivoham is a comprehensive spiritual growth platform built with React and TypeScript, designed to provide authentic Kundalini Yoga teachings from Parama Pujya Sree Jeeveswara Yogi. The platform offers structured courses, event management, progress tracking, and community features.
 
 ### **Key Objectives**
 - Provide accessible spiritual education globally
@@ -710,7 +710,7 @@ const MyComponent = () => {
     "title": "Siva Kundalini Sadhana",
     "description": "The safest and most organized form of practicing Kundalini Yoga...",
     "joinNow": "Join Now",
-    "aboutHeading": "About Sri Jeeveswara Yogi"
+    "aboutHeading": "About Sree Jeeveswara Yogi"
   },
   "nav": {
     "home": "Home",
