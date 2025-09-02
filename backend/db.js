@@ -1,9 +1,15 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
+// Sanitization function for logs
+const sanitizeForLog = (input) => {
+  if (typeof input !== 'string') return String(input);
+  return encodeURIComponent(input).replace(/[\r\n]/g, '');
+};
+
 const connectDB = async () => {
   try {
-    const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://sivoham:LIJhKckJrGiNgpQk@sks.8xbkoep.mongodb.net/?retryWrites=true&w=majority&appName=sks';
+    const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/sivoham';
     
     await mongoose.connect(MONGO_URI, {
       useNewUrlParser: true,
@@ -14,7 +20,7 @@ const connectDB = async () => {
     });
     
     mongoose.connection.on('error', (err) => {
-      console.error('MongoDB connection error:', err);
+      console.error('MongoDB connection error:', sanitizeForLog(err.message || String(err)));
     });
     
     mongoose.connection.on('disconnected', () => {
@@ -23,7 +29,7 @@ const connectDB = async () => {
     
     console.log('MongoDB Atlas connected successfully');
   } catch (err) {
-    console.error('MongoDB Atlas connection failed:', err.message);
+    console.error('MongoDB Atlas connection failed:', sanitizeForLog(err.message || String(err)));
     console.log('Trying local MongoDB fallback...');
     try {
       await mongoose.connect('mongodb://localhost:27017/sivoham', {
@@ -32,7 +38,7 @@ const connectDB = async () => {
       });
       console.log('Local MongoDB connected successfully');
     } catch (localErr) {
-      console.error('Local MongoDB also failed:', localErr.message);
+      console.error('Local MongoDB also failed:', sanitizeForLog(localErr.message || String(localErr)));
       throw err;
     }
   }

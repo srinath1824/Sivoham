@@ -1,7 +1,16 @@
 const express = require('express');
 const cors = require('cors');
+const csrf = require('csurf');
 require('dotenv').config();
 const connectDB = require('./db');
+const { generalLimiter, authLimiter, securityHeaders } = require('./middleware/security');
+const { validateEventRegistration, validateUserRegistration, validateProgressUpdate } = require('./middleware/validation');
+
+// Sanitization function for logs
+const sanitizeForLog = (input) => {
+  if (typeof input !== 'string') return String(input);
+  return encodeURIComponent(input).replace(/[\r\n]/g, '');
+};
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,7 +22,7 @@ process.on('uncaughtException', (err) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('Unhandled Rejection at:', sanitizeForLog(String(promise)), 'reason:', sanitizeForLog(String(reason)));
   process.exit(1);
 });
 
@@ -36,11 +45,14 @@ if (process.env.ENABLE_NEWRELIC === 'true') {
  */
 
 // Security middleware
+app.use(securityHeaders);
+app.use(generalLimiter);
+
 app.use(cors({
-  origin: '*', // Allow all origins explicitly
-  credentials: false, // Set to false when using wildcard origin
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
 }));
 
 // Additional CORS headers for preflight requests
@@ -57,30 +69,31 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting middleware (basic)
-const requestCounts = new Map();
-app.use((req, res, next) => {
-  const ip = req.ip || req.connection.remoteAddress;
-  const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxRequests = 1000; // per window
-  
-  if (!requestCounts.has(ip)) {
-    requestCounts.set(ip, { count: 1, resetTime: now + windowMs });
-  } else {
-    const record = requestCounts.get(ip);
-    if (now > record.resetTime) {
-      record.count = 1;
-      record.resetTime = now + windowMs;
-    } else {
-      record.count++;
-      if (record.count > maxRequests) {
-        return res.status(429).json({ error: 'Too many requests' });
-      }
-    }
-  }
-  next();
+// CSRF Protection (only for state-changing operations)
+const csrfProtection = csrf({ 
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  },
+  ignoreMethods: ['GET', 'HEAD', 'OPTIONS']
 });
+
+// Apply CSRF and rate limiting to routes
+app.use('/api/auth', authLimiter, csrfProtection);
+app.use('/api/admin', csrfProtection);
+app.use('/api/events', csrfProtection);
+app.use('/api/event-registrations', csrfProtection);
+app.use('/api/progress', csrfProtection);
+app.use('/api/user', csrfProtection);
+
+// CSRF token endpoint
+app.get('/api/csrf-token', csrfProtection, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+
+// Trust proxy for rate limiting
+app.set('trust proxy', 1);
 
 app.get('/', (req, res) => {
   res.send({ status: 'Backend server running!' });

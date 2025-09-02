@@ -126,8 +126,13 @@ export default function AdminRequestsContent() {
   const getUserWhatsAppMessage = (user: any) => {
     const template = userTemplate || `*Sivoham* {name} garu🙏,\n\n*Congratulations!*\n*Your registration has been {status}.*\n\nYou can now access our courses and programs.\n\n*Jai Gurudev* 🙏`;
     
+    // Sanitize user input to prevent XSS
+    const sanitizeName = (name: string) => {
+      return String(name || '').replace(/[<>"'&]/g, '');
+    };
+    
     return template
-      .replace(/{name}/g, `${user.firstName} ${user.lastName}`)
+      .replace(/{name}/g, `${sanitizeName(user.firstName)} ${sanitizeName(user.lastName)}`)
       .replace(/{status}/g, user.isSelected ? 'approved' : 'processed');
   };
 

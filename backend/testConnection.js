@@ -31,7 +31,7 @@ async function seedEvents() {
 
 async function testConnection() {
   try {
-    const MONGO_URI = 'mongodb+srv://sivoham:LIJhKckJrGiNgpQk@sks.8xbkoep.mongodb.net/?retryWrites=true&w=majority&appName=sks'
+    const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/sivoham'
     await mongoose.connect(MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,

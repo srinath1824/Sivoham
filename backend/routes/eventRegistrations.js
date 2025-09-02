@@ -5,12 +5,18 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { checkEventPermission } = require('../middleware/eventPermissions');
 
+// Sanitization function for logs
+const sanitizeForLog = (input) => {
+  if (typeof input !== 'string') return String(input);
+  return encodeURIComponent(input).replace(/[\r\n]/g, '');
+};
+
 const router = express.Router();
 
 // POST /api/event-registrations (user registers for event)
 router.post('/', async (req, res) => {
   try {
-    console.log('Received registration request:', req.body); // Log incoming data
+    console.log('Received registration request:', sanitizeForLog(JSON.stringify(req.body))); // Log incoming data
     const {
       eventId, fullName, mobile, gender, age, profession, address, sksLevel, sksMiracle, otherDetails, forWhom
     } = req.body;
@@ -65,7 +71,7 @@ router.post('/', async (req, res) => {
     };
     user.events.eventsRegistered.push(regObj);
     await user.save();
-    console.log('Saved registration object:', regObj); // Log saved data
+    console.log('Saved registration object:', sanitizeForLog(JSON.stringify(regObj))); // Log saved data
     // Return all saved data in the response
     const reg = user.events.eventsRegistered[user.events.eventsRegistered.length - 1];
     res.json({ success: true, registrationId: reg.registeredId, status: reg.status, registration: reg });
@@ -194,7 +200,7 @@ router.get('/all', auth, checkEventPermission('eventUsers'), async (req, res) =>
 });
 
 // GET /api/event-registrations/user/:mobile (fetch all registrations for a user by mobile)
-router.get('/user/:mobile', async (req, res) => {
+router.get('/user/:mobile', auth, async (req, res) => {
   try {
     const { mobile } = req.params;
     if (!mobile) return res.status(400).json({ error: 'Mobile is required' });
@@ -301,7 +307,7 @@ router.put('/:id/attend', auth, checkEventPermission('barcodeScanner'), async (r
     await user.save();
     res.json({ success: true, message: `Attendance marked for ${reg.fullName}`, attendedAt: now });
   } catch (err) {
-    console.error('Mark attendance error:', err);
+    console.error('Mark attendance error:', sanitizeForLog(err.message || String(err)));
     res.status(500).json({ error: 'Failed to mark attendance' });
   }
 });
@@ -380,10 +386,10 @@ router.put('/:id/toggle-whatsapp', auth, checkEventPermission('eventUsers'), asy
       }
     );
     
-    console.log(`Toggle result for ${req.params.id}:`, result);
+    console.log(`Toggle result for ${sanitizeForLog(req.params.id)}:`, sanitizeForLog(JSON.stringify(result)));
     res.json({ success: true, whatsappSent: newValue });
   } catch (err) {
-    console.error('Toggle error:', err);
+    console.error('Toggle error:', sanitizeForLog(err.message || String(err)));
     res.status(500).json({ error: err.message });
   }
 });

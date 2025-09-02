@@ -1,6 +1,12 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// Sanitization function for logs
+const sanitizeForLog = (input) => {
+  if (typeof input !== 'string') return String(input);
+  return encodeURIComponent(input).replace(/[\r\n]/g, '');
+};
+
 module.exports = async function (req, res, next) {
   try {
     // DEV ONLY: skip auth if SKIP_AUTH env or header is set (remove in production)
@@ -46,7 +52,7 @@ module.exports = async function (req, res, next) {
     };
     next();
   } catch (err) {
-    console.error('Auth middleware error:', err.message);
+    console.error('Auth middleware error:', sanitizeForLog(err.message || String(err)));
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Token expired' });
     }

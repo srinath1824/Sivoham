@@ -2,14 +2,32 @@ const express = require('express');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 
+// Sanitization function for logs
+const sanitizeForLog = (input) => {
+  if (typeof input !== 'string') return String(input);
+  return encodeURIComponent(input).replace(/[\r\n]/g, '');
+};
+
+// Safe object property assignment to prevent prototype pollution
+const safeAssign = (obj, key, value) => {
+  if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+    return false;
+  }
+  if (obj.hasOwnProperty(key) || !key.includes('__')) {
+    obj[key] = value;
+    return true;
+  }
+  return false;
+};
+
 const router = express.Router();
 
 // POST /api/progress
 router.post('/', auth, async (req, res) => {
   try {
     const userId = req.user.id;
-    console.log('Progress API - User ID:', userId);
-    console.log('Progress API - Request body:', req.body);
+    console.log('Progress API - User ID:', sanitizeForLog(userId));
+    console.log('Progress API - Request body:', sanitizeForLog(JSON.stringify(req.body)));
     
     if (!userId) {
       return res.status(401).json({ error: 'User ID not found in token' });
@@ -79,21 +97,24 @@ router.post('/', auth, async (req, res) => {
       dayGapMs: dayGap
     };
 
-    // Update dailyProgress object
+    // Update dailyProgress object with safe assignment
     const dayKey = `day${day}`;
     const percentage = videoDuration > 0 ? Math.round((watchedSeconds / videoDuration) * 100) : 0;
     const dayGapHours = Math.round(dayGap / (1000 * 60 * 60) * 100) / 100; // Convert to hours with 2 decimal places
     
-    user.courses[levelKey].dailyProgress[dayKey] = {
-      watchTime: Math.round((watchedSeconds || 0) / 60), // in minutes
-      watchedSeconds: watchedSeconds || 0, // capture exact watched seconds
-      percentage: percentage,
-      date: currentDate,
-      completedAt: completedAt || Date.now(), // capture exact completion timestamp
-      completed: !!completed,
-      dayGapMs: dayGap,
-      dayGapHours: dayGapHours
-    };
+    // Safe assignment to prevent prototype pollution
+    if (safeAssign(user.courses[levelKey].dailyProgress, dayKey, {})) {
+      user.courses[levelKey].dailyProgress[dayKey] = {
+        watchTime: Math.round((watchedSeconds || 0) / 60), // in minutes
+        watchedSeconds: watchedSeconds || 0, // capture exact watched seconds
+        percentage: percentage,
+        date: currentDate,
+        completedAt: completedAt || Date.now(), // capture exact completion timestamp
+        completed: !!completed,
+        dayGapMs: dayGap,
+        dayGapHours: dayGapHours
+      };
+    }
 
     // Handle feedback
     if (feedback) {
@@ -203,7 +224,7 @@ router.post('/', auth, async (req, res) => {
       courseProgress
     });
   } catch (err) {
-    console.error('Error in /api/progress POST:', err);
+    console.error('Error in /api/progress POST:', sanitizeForLog(err.message || String(err)));
     res.status(500).json({ error: err.message || 'Failed to update progress' });
   }
 });
@@ -251,7 +272,7 @@ router.get('/', auth, async (req, res) => {
       courses: user.courses || {}
     });
   } catch (err) {
-    console.error('Error in /api/progress GET:', err);
+    console.error('Error in /api/progress GET:', sanitizeForLog(err.message || String(err)));
     res.status(500).json({ error: err.message || 'Failed to fetch progress' });
   }
 });
