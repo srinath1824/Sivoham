@@ -127,7 +127,9 @@ function App({ navigate }: { navigate: any }) {
    * Opens the login dialog.
    */
   function handleLoginClick() {
-    setLoginOpen(true);
+    if (isFeatureEnabled('login')) {
+      setLoginOpen(true);
+    }
   }
 
   if (loadingUser) {
@@ -141,7 +143,9 @@ function App({ navigate }: { navigate: any }) {
         <ErrorBoundary>
           <EventScrollBanner />
         </ErrorBoundary>
-        <LoginDialog open={loginOpen} onLoginSuccess={handleLogin} onClose={() => setLoginOpen(false)} />
+        {isFeatureEnabled('login') && (
+          <LoginDialog open={loginOpen} onLoginSuccess={handleLogin} onClose={() => setLoginOpen(false)} />
+        )}
         <Routes>
         <Route path="/" element={<Home user={user} />} />
         <Route path="/join" element={

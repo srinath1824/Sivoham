@@ -131,7 +131,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
               >
                 {t('nav.login')}
               </button>
-            ) : isLoggedIn ? (
+            ) : (
               <>
                 {/* User avatar button with initials */}
                 <IconButton
@@ -157,7 +157,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
                       fontSize: 18,
                     }}
                   >
-                    {`${(user?.firstName?.[0] || '').toUpperCase()}${(user?.lastName?.[0] || '').toUpperCase()}`}
+                    {`${(user.firstName?.[0] || '').toUpperCase()}${(user.lastName?.[0] || '').toUpperCase()}`}
                   </Avatar>
                 </IconButton>
                 <Menu
@@ -168,7 +168,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
                 >
                   <MenuItem disabled>
                     <span style={{ fontWeight: 700, color: '#b45309' }}>
-                      {`${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
+                      {`${user.firstName || ''} ${user.lastName || ''}`.trim()}
                     </span>
                   </MenuItem>
                   <Divider />
@@ -190,7 +190,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
                   </MenuItem>
                 </Menu>
               </>
-            ) : null}
+            )}
           </Box>
         </Toolbar>
       </AppBar>
@@ -265,10 +265,10 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
               >
                 {t('nav.login')}
               </button>
-            ) : isLoggedIn ? (
+            ) : (
               <>
                 {/* Gurudev text for super admin */}
-                {user?.isSuperAdmin && (
+                {user.isSuperAdmin && (
                   <Typography
                     sx={{
                       fontFamily: 'cursive',
@@ -310,7 +310,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
                       fontSize: 18,
                     }}
                   >
-                    {`${(user?.firstName?.[0] || '').toUpperCase()}${(user?.lastName?.[0] || '').toUpperCase()}`}
+                    {`${(user.firstName?.[0] || '').toUpperCase()}${(user.lastName?.[0] || '').toUpperCase()}`}
                   </Avatar>
                 </IconButton>
                 <Menu
@@ -321,7 +321,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
                 >
                   <MenuItem disabled>
                     <span style={{ fontWeight: 700, color: '#b45309' }}>
-                      {`${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
+                      {`${user.firstName || ''} ${user.lastName || ''}`.trim()}
                     </span>
                   </MenuItem>
                   <Divider />
@@ -343,7 +343,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
                   </MenuItem>
                 </Menu>
               </>
-            ) : null}
+            )}
           </Box>
         </Toolbar>
       </AppBar>
@@ -351,13 +351,11 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
       <Drawer style={{ zIndex: 10000 }} anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <Box sx={{ width: 240, pt: 2 }} role="presentation" onClick={() => setDrawerOpen(false)}>
           <List>
-            {user && (
-              <MenuItem disabled>
-                <span style={{ fontWeight: 700, color: '#b45309' }}>
-                  {`${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
-                </span>
-              </MenuItem>
-            )}
+            <MenuItem disabled>
+              <span style={{ fontWeight: 700, color: '#b45309' }}>
+                {`${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
+              </span>
+            </MenuItem>
             <ListItem key={'/profile'} disablePadding>
               <ListItemButton component={Link} to={'/profile'}>
                 <ListItemText primary={t('profile')} />

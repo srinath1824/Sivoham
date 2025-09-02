@@ -3,6 +3,7 @@ import Grid from '@mui/material/Grid';
 import { Box, Typography, Link as MuiLink, Alert } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { isFeatureEnabled } from '../config/features.ts';
 const Programs = lazy(() => import('./Programs.tsx'));
 const Gallery = lazy(() => import('./Gallery.tsx'));
 // const Testimonials = lazy(() => import('./Testimonials.tsx'));
@@ -152,7 +153,7 @@ export default function Home({ user }: HomeProps) {
             <AnimatedImage src="/images/guruji_Rays.png" alt={t('home.heroImageAlt')} className="" />
           </div>
         </div>
-        {!user && <Link to="/join" className="home-cta">{t('home.joinNow')}</Link>}
+        {!user && isFeatureEnabled('registration') && <Link to="/join" className="home-cta">{t('home.joinNow')}</Link>}
       </section>
       {/* About Section */}
       <section id="about" className="home-section" style={{ background: '#ffff', padding: '2rem 0' }}>

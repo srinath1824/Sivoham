@@ -663,11 +663,31 @@ button,
   font-weight: 600;
   border-radius: 0.7rem;
   box-shadow: none;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
 }
 button:hover,
 .MuiButton-root:hover {
-  background: var(--glow);
+  background: var(--text-shadow) !important;
+  color: var(--primary-dark) !important;
+  transform: translateY(-2px) scale(1.04);
+}
+
+/* Fix for Material-UI button variants */
+.MuiButton-contained:hover {
+  background: var(--text-shadow) !important;
+  color: var(--primary-dark) !important;
+  transform: translateY(-2px) scale(1.04);
+}
+.MuiButton-outlined:hover {
+  background: var(--text-shadow) !important;
+  color: var(--primary-dark) !important;
+  border-color: var(--primary) !important;
+  transform: translateY(-2px) scale(1.04);
+}
+.MuiButton-text:hover {
+  background: var(--text-shadow) !important;
+  color: var(--primary-dark) !important;
+  transform: translateY(-2px) scale(1.04);
 }
 
 input,

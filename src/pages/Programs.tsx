@@ -2,6 +2,7 @@ import React from 'react';
 import Grid from '@mui/material/Grid';
 import { Box, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
+import { isFeatureEnabled } from '../config/features.ts';
 
 interface ProgramsProps {
   user?: any;
@@ -199,7 +200,7 @@ export default function Programs({ user }: ProgramsProps) {
         </Grid>
       </Grid>
       {/* Join Now Button */}
-      {!user && (
+      {!user && isFeatureEnabled('registration') && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6, mb: 2 }}>
           <Link
             to="/join"

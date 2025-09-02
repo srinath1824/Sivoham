@@ -4,6 +4,8 @@ import { CalendarToday, LocationOn, AccessTime, People } from '@mui/icons-materi
 import axios from 'axios';
 import QRCode from 'qrcode';
 import { API_URL } from '../services/api.ts';
+import { isFeatureEnabled } from '../config/features.ts';
+import JaiGurudevLoader from '../components/JaiGurudevLoader.tsx';
 
 interface EventType {
   _id: string;
@@ -313,6 +315,11 @@ export default function Events() {
         </Box>
 
         {tab === 0 && (
+          loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 300px)' }}>
+              <JaiGurudevLoader size="medium" />
+            </Box>
+          ) : (
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, minHeight: { md: 'calc(100vh - 300px)' } }}>
             {/* Upcoming Events */}
             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -425,6 +432,10 @@ export default function Events() {
                                   variant="contained"
                                   size="small"
                                   onClick={() => {
+                                    if (!isFeatureEnabled('login')) {
+                                      alert('Event registration is currently unavailable. Please contact administrator for assistance.\n\nAdmin Contact:\n📞 Phone: +91-9876543210\n📧 Email: admin@sivoham.org\n🕐 Available: 9 AM - 6 PM (Mon-Sat)');
+                                      return;
+                                    }
                                     if (!user) {
                                       alert('Please log in to register for events.');
                                       return;
@@ -525,6 +536,7 @@ export default function Events() {
               </Box>
             </Box>
           </Box>
+          )
         )}
 
         {user && tab === 1 && (
