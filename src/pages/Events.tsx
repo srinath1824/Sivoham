@@ -6,6 +6,7 @@ import QRCode from 'qrcode';
 import { API_URL } from '../services/api.ts';
 import { isFeatureEnabled } from '../config/features.ts';
 import JaiGurudevLoader from '../components/JaiGurudevLoader.tsx';
+import { useTranslation } from 'react-i18next';
 
 interface EventType {
   _id: string;
@@ -52,6 +53,7 @@ const formatDateTime = (dateStr: string, startTime?: string, endTime?: string) =
 };
 
 export default function Events() {
+  const { t } = useTranslation();
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
@@ -272,7 +274,7 @@ export default function Events() {
             textAlign: { xs: 'center', md: 'left' },
             flexShrink: 0
           }}>
-            🎪 Events
+            🎪 {t('events.title')}
           </Typography>
           
           {/* Tabs */}
@@ -294,13 +296,13 @@ export default function Events() {
             }}
             centered={false}
           >
-            <Tab label="📅 All Events" />
-            {user && <Tab label="🎫 My Registrations" />}
+            <Tab label={`📅 ${t('events.allEvents')}`} />
+            {user && <Tab label={`🎫 ${t('events.myRegistrations')}`} />}
           </Tabs>
           
           {/* Year Filter */}
           <FormControl sx={{ minWidth: 120, flexShrink: 0 }}>
-            <InputLabel>Filter by Year</InputLabel>
+            <InputLabel>{t('events.filterByYear')}</InputLabel>
             <Select
               value={yearFilter}
               label="Filter by Year"
@@ -334,14 +336,14 @@ export default function Events() {
                 justifyContent: 'center',
                 gap: 1
               }}>
-                <CalendarToday /> Upcoming Events
+                <CalendarToday /> {t('events.upcomingEvents')}
               </Typography>
               
               <Box sx={{ flex: 1, overflow: { xs: 'visible', md: 'hidden' } }}>
                 {upcomingEvents.length === 0 ? (
                   <Card sx={{ textAlign: 'center', py: 4, background: 'rgba(255,255,255,0.8)', borderRadius: 3, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Typography sx={{ color: '#666', fontFamily: 'Lora, serif', fontSize: '1rem' }}>
-                      No upcoming events for {yearFilter}
+                      {t('events.noUpcomingEvents')} {yearFilter}
                     </Typography>
                   </Card>
                 ) : (
@@ -423,7 +425,7 @@ export default function Events() {
                               if (isRegistrationClosed) {
                                 return (
                                   <Typography sx={{ color: 'red', fontWeight: 600, fontSize: '0.75rem' }}>
-                                    Closed
+                                    {t('events.closed')}
                                   </Typography>
                                 );
                               }
@@ -433,11 +435,11 @@ export default function Events() {
                                   size="small"
                                   onClick={() => {
                                     if (!isFeatureEnabled('login')) {
-                                      alert('Event registration is currently unavailable. Please contact administrator for assistance.\n\nAdmin Contact:\n📞 Phone: +91-9876543210\n📧 Email: admin@sivoham.org\n🕐 Available: 9 AM - 6 PM (Mon-Sat)');
+                                      alert(t('events.contactAdmin'));
                                       return;
                                     }
                                     if (!user) {
-                                      alert('Please log in to register for events.');
+                                      alert(t('events.loginRequired'));
                                       return;
                                     }
                                     handleRegisterClick(event);
@@ -450,7 +452,7 @@ export default function Events() {
                                     px: 2
                                   }}
                                 >
-                                  Register
+                                  {t('events.register')}
                                 </Button>
                               );
                             })()} 
@@ -485,14 +487,14 @@ export default function Events() {
                 justifyContent: 'center',
                 gap: 1
               }}>
-                📚 Past Events
+                📚 {t('events.pastEvents')}
               </Typography>
               
               <Box sx={{ flex: 1, overflow: { xs: 'visible', md: 'hidden' } }}>
                 {pastEvents.length === 0 ? (
                   <Card sx={{ textAlign: 'center', py: 4, background: 'rgba(255,255,255,0.8)', borderRadius: 3, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Typography sx={{ color: '#666', fontFamily: 'Lora, serif', fontSize: '1rem' }}>
-                      No past events for {yearFilter}
+                      {t('events.noPastEvents')} {yearFilter}
                     </Typography>
                   </Card>
                 ) : (
@@ -767,7 +769,7 @@ export default function Events() {
           open={toastOpen}
           autoHideDuration={4000}
           onClose={() => setToastOpen(false)}
-          message="You have already registered for this event"
+          message={t('events.alreadyRegistered')}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           sx={{
             '& .MuiSnackbarContent-root': {
