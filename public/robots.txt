@@ -1,3 +1,15 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+
+# Sitemap
+Sitemap: https://sivakundalini.org/sitemap.xml
+
+# Disallow admin pages
+Disallow: /admin
+
+# Allow important pages for SEO
+Allow: /
+Allow: /join
+Allow: /courses
+Allow: /events
+Allow: /profile
