@@ -13,6 +13,8 @@ import { PermissionProvider } from './contexts/PermissionContext.tsx';
 import EventScrollBanner from './components/EventScrollBanner.tsx';
 import ErrorBoundary from './components/ErrorBoundary.tsx';
 import NetworkError from './components/NetworkError.tsx';
+import { isFeatureEnabled } from './config/features.ts';
+import ProtectedRoute from './components/ProtectedRoute.tsx';
 
 interface UserProfile {
   _id?: string;
@@ -115,9 +117,10 @@ function App({ navigate }: { navigate: any }) {
    */
   function handleLogout() {
     setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    localStorage.clear();
+    sessionStorage.clear();
     setLoginOpen(false);
+    window.location.href = '/';
   }
 
   /**
@@ -141,24 +144,28 @@ function App({ navigate }: { navigate: any }) {
         <LoginDialog open={loginOpen} onLoginSuccess={handleLogin} onClose={() => setLoginOpen(false)} />
         <Routes>
         <Route path="/" element={<Home user={user} />} />
-        <Route path="/join" element={<Join handleLogin={handleLogin} />} />
+        <Route path="/join" element={
+          <ProtectedRoute feature="registration" user={user}>
+            <Join handleLogin={handleLogin} />
+          </ProtectedRoute>
+        } />
         <Route path="/events" element={
-          <ErrorBoundary>
-            <Suspense fallback={<SectionLoader />}>
-              <Events />
-            </Suspense>
-          </ErrorBoundary>
+          <ProtectedRoute feature="events" user={user}>
+            <ErrorBoundary>
+              <Suspense fallback={<SectionLoader />}>
+                <Events />
+              </Suspense>
+            </ErrorBoundary>
+          </ProtectedRoute>
         } />
         <Route path="/courses" element={
-          user ? (
+          <ProtectedRoute feature="courses" user={user} requireAuth={true}>
             <ErrorBoundary>
               <Suspense fallback={<SectionLoader />}>
                 <Courses />
               </Suspense>
             </ErrorBoundary>
-          ) : (
-            <LoginRequiredMessage onLoginClick={handleLoginClick} />
-          )
+          </ProtectedRoute>
         } />
         {/* <Route path="/progress" element={
           user ? (
@@ -170,26 +177,30 @@ function App({ navigate }: { navigate: any }) {
           )
         } /> */}
         <Route path="/admin" element={
-          user && user.isAdmin ? (
-            <ErrorBoundary>
-              <PermissionProvider>
-                <AdminRequests />
-              </PermissionProvider>
-            </ErrorBoundary>
-          ) : (
-            <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fff7f0', borderRadius: 16, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', margin: '2rem auto', maxWidth: 480, padding: '2.5rem 1.5rem' }}>
-              <span style={{ fontSize: 54, color: '#de6b2f', marginBottom: 16 }}>⛔</span>
-              <h2 style={{ color: '#de6b2f', fontFamily: 'Lora, serif', fontWeight: 700, marginBottom: 12, fontSize: '2rem', textAlign: 'center' }}>Not Authorized</h2>
-              <p style={{ color: '#1a2341', fontFamily: 'Lora, serif', fontSize: '1.15rem', textAlign: 'center', marginBottom: 0 }}>
-                You do not have permission to view this page.
-              </p>
-            </div>
-          )
+          <ProtectedRoute feature="admin" user={user} requireAuth={true}>
+            {user && user.isAdmin ? (
+              <ErrorBoundary>
+                <PermissionProvider>
+                  <AdminRequests />
+                </PermissionProvider>
+              </ErrorBoundary>
+            ) : (
+              <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fff7f0', borderRadius: 16, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', margin: '2rem auto', maxWidth: 480, padding: '2.5rem 1.5rem' }}>
+                <span style={{ fontSize: 54, color: '#de6b2f', marginBottom: 16 }}>⛔</span>
+                <h2 style={{ color: '#de6b2f', fontFamily: 'Lora, serif', fontWeight: 700, marginBottom: 12, fontSize: '2rem', textAlign: 'center' }}>Not Authorized</h2>
+                <p style={{ color: '#1a2341', fontFamily: 'Lora, serif', fontSize: '1.15rem', textAlign: 'center', marginBottom: 0 }}>
+                  You do not have permission to view this page.
+                </p>
+              </div>
+            )}
+          </ProtectedRoute>
         } />
         <Route path="/profile" element={
-          <ErrorBoundary>
-            <Profile />
-          </ErrorBoundary>
+          <ProtectedRoute feature="profile" user={user} requireAuth={true}>
+            <ErrorBoundary>
+              <Profile />
+            </ErrorBoundary>
+          </ProtectedRoute>
         } />
         </Routes>
         <Footer />
@@ -238,7 +249,17 @@ function LoginRequiredMessage({ onLoginClick }: { onLoginClick: () => void }) {
  * @returns {JSX.Element}
  */
 function SectionLoader() {
-  return <JaiGurudevLoader size="medium" />;
+  return (
+    <main className="main-content" style={{ 
+      minHeight: 'calc(100vh - 200px)', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #fff7f0 0%, #ffeee0 100%)'
+    }}>
+      <JaiGurudevLoader size="medium" />
+    </main>
+  );
 }
 
 

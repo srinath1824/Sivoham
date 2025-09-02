@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Divider, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, RadioGroup, FormControlLabel, Radio, Alert, Tabs, Tab, Snackbar } from '@mui/material';
-import { PAST_EVENTS, UPCOMING_EVENTS } from '../config/constants.ts';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, RadioGroup, FormControlLabel, Radio, Alert, Tabs, Tab, Snackbar, Card, CardContent, Chip, Pagination, FormControl, InputLabel, Select } from '@mui/material';
+import { CalendarToday, LocationOn, AccessTime, People } from '@mui/icons-material';
 import axios from 'axios';
-import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
 import { API_URL } from '../services/api.ts';
 
@@ -80,6 +79,10 @@ export default function Events() {
   const [barcodeDialog, setBarcodeDialog] = useState<{ open: boolean; regId: string; qrCode: string }>({ open: false, regId: '', qrCode: '' });
   const [detailsDialog, setDetailsDialog] = useState<{ open: boolean; registration: RegistrationType | null }>({ open: false, registration: null });
   const [toastOpen, setToastOpen] = useState(false);
+  const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [eventsPerPage] = useState(6);
+  const [registrationsPerPage] = useState(10);
 
   const SKS_LEVELS = [
     'Level-5.1', 'Level-5', 'Level-4', 'Level-3', 'Level-2', 'Level-1', 'Not done any Level'
@@ -116,30 +119,28 @@ export default function Events() {
     }
   }, [user && user.mobile]);
 
-  useEffect(() => {
-    async function refreshUser() {
-      if (user && user._id && token && user.isSelected === false) {
-        try {
-          const res = await fetch(`${API_URL}/user/${user._id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (res.ok) {
-            const latest = await res.json();
-            if (latest && (latest.isSelected !== user.isSelected || JSON.stringify(latest) !== JSON.stringify(user))) {
-              setUser(latest);
-              localStorage.setItem('user', JSON.stringify(latest));
-            }
-          }
-        } catch (e) {
-          // ignore
-        }
-      }
-    }
-    refreshUser();
-  }, [user && user._id, token, user && user.isSelected]);
+  const now = new Date();
+  
+  // Filter events by year and type
+  const { upcomingEvents, pastEvents, availableYears } = useMemo(() => {
+    const allEvents = Array.isArray(events) ? events : [];
+    const years = [...new Set(allEvents.map(e => new Date(e.date).getFullYear()))].sort((a, b) => b - a);
+    
+    const filteredEvents = allEvents.filter(e => new Date(e.date).getFullYear() === yearFilter);
+    const upcoming = filteredEvents.filter(e => new Date(e.date) >= now);
+    const past = filteredEvents.filter(e => new Date(e.date) < now).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    return { upcomingEvents: upcoming, pastEvents: past, availableYears: years };
+  }, [events, yearFilter, now]);
+  
+  // Pagination for registered events
+  const paginatedRegisteredEvents = useMemo(() => {
+    const sortedEvents = [...registeredEvents].sort((a, b) => new Date(b.eventId?.date || 0).getTime() - new Date(a.eventId?.date || 0).getTime());
+    const startIndex = (currentPage - 1) * registrationsPerPage;
+    return sortedEvents.slice(startIndex, startIndex + registrationsPerPage);
+  }, [registeredEvents, currentPage, registrationsPerPage]);
 
   const handleRegisterClick = (event: EventType) => {
-    // Check if user already registered for this event
     const alreadyRegistered = registeredEvents.some(reg => reg.eventId?._id === event._id);
     if (alreadyRegistered) {
       setToastOpen(true);
@@ -163,6 +164,7 @@ export default function Events() {
     setRegisterError('');
     setRegisterSuccess('');
   };
+
   const handleRegisterClose = () => {
     setRegisterOpen(false);
     setRegisterEvent(null);
@@ -172,7 +174,6 @@ export default function Events() {
     const { name, value } = e.target;
     if (name === 'forWhom') {
       if (value === 'self') {
-        // Auto-populate with user data
         setRegisterData({
           ...registerData,
           [name]: value,
@@ -184,7 +185,6 @@ export default function Events() {
           address: user?.address || user?.place || '',
         });
       } else {
-        // Clear fields for someone else
         setRegisterData({
           ...registerData,
           [name]: value,
@@ -212,6 +212,7 @@ export default function Events() {
     if (!registerData.forWhom || !registerData.forWhom.trim()) return 'Please select for whom you are registering.';
     return '';
   };
+
   const handleRegisterSubmit = async () => {
     setRegisterError('');
     setRegisterSuccess('');
@@ -228,7 +229,6 @@ export default function Events() {
         profession: registerData.profession && registerData.profession.trim() !== '' ? registerData.profession : null,
         otherDetails: registerData.otherDetails && registerData.otherDetails.trim() !== '' ? registerData.otherDetails : null
       };
-      console.log('Submitting registration payload:', payload); // Log payload
       const res = await axios.post(`${API_URL}/event-registrations`, payload);
       setRegisterSuccess(`Registration successful! Your ID: ${res.data.registrationId} (Status: ${res.data.status})`);
       setRegisterOpen(false);
@@ -249,78 +249,181 @@ export default function Events() {
     }
   };
 
-  const now = new Date();
-  const upcomingEvents = Array.isArray(events) ? events.filter(e => new Date(e.date) >= now) : [];
-  const pastEvents = Array.isArray(events) ? events.filter(e => new Date(e.date) < now) : [];
-
   return (
-    <main className="main-content" style={{ minHeight: 'calc(100vh - 120px)', background: '#fff7f0', padding: '2rem 0 2rem 0' }}>
-      <Box sx={{ maxWidth: '100%', mx: 'auto', px: { xs: 1, md: 2 }, paddingBottom: 10 }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 4, justifyContent: 'flex-start' }}>
-          <Tab label="Events" />
-          {user && <Tab label="Registered Events" />}
-        </Tabs>
-        {tab === 0 && (
-          <Box>
-            {/* <Typography variant="h2" sx={{ fontFamily: 'Lora, serif', color: '#de6b2f', fontWeight: 700, mb: 4, textAlign: 'center' }}>
-              Events
-            </Typography> */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                alignItems: 'stretch',
-                position: 'relative',
-                gap: { xs: 4, md: 0 },
-              }}
+    <main className="main-content" style={{ minHeight: 'calc(100vh - 120px)', background: 'linear-gradient(135deg, #fff7f0 0%, #ffeee0 100%)', padding: '2rem 0' }}>
+      <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 4 } }}>
+        {/* Header with Tabs and Filter */}
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', md: 'row' }, 
+          alignItems: { xs: 'stretch', md: 'center' }, 
+          justifyContent: 'space-between', 
+          mb: 4,
+          gap: { xs: 2, md: 3 }
+        }}>
+          {/* Title */}
+          <Typography variant="h3" sx={{ 
+            fontFamily: 'Lora, serif', 
+            color: '#de6b2f', 
+            fontWeight: 700, 
+            fontSize: { xs: '1.8rem', md: '2.2rem' },
+            textAlign: { xs: 'center', md: 'left' },
+            flexShrink: 0
+          }}>
+            🎪 Events
+          </Typography>
+          
+          {/* Tabs */}
+          <Tabs 
+            value={tab} 
+            onChange={(_, v) => setTab(v)} 
+            sx={{ 
+              '& .MuiTab-root': {
+                fontFamily: 'Lora, serif',
+                fontWeight: 600,
+                fontSize: { xs: '1rem', md: '1.1rem' },
+                minWidth: { xs: 'auto', md: 120 }
+              },
+              '& .MuiTabs-flexContainer': {
+                justifyContent: { xs: 'center', md: 'flex-start' }
+              },
+              flexGrow: 1,
+              maxWidth: { xs: '100%', md: 'auto' }
+            }}
+            centered={false}
+          >
+            <Tab label="📅 All Events" />
+            {user && <Tab label="🎫 My Registrations" />}
+          </Tabs>
+          
+          {/* Year Filter */}
+          <FormControl sx={{ minWidth: 120, flexShrink: 0 }}>
+            <InputLabel>Filter by Year</InputLabel>
+            <Select
+              value={yearFilter}
+              label="Filter by Year"
+              onChange={(e) => setYearFilter(Number(e.target.value))}
+              sx={{ borderRadius: 2 }}
             >
-              {/* Upcoming Events Table */}
-              <Box sx={{ flex: 1, pr: { md: 2, xs: 0 }, mb: { xs: 0, md: 0 } }}>
-                <Typography variant="h4" sx={{ fontFamily: 'Lora, serif', color: '#b45309', fontWeight: 600, mb: 2, textAlign: 'center' }}>
-                  Upcoming Events
-                </Typography>
-                <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', height: '100%' }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Date & Time</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Event</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Description</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Venue</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Location</TableCell>
-                        <TableCell></TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {upcomingEvents.length === 0 && (
-                        <TableRow><TableCell colSpan={6}>No upcoming events at this time.</TableCell></TableRow>
-                      )}
-                      {Array.isArray(upcomingEvents) && upcomingEvents.map((event: EventType) => (
-                        <TableRow key={event._id}>
-                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{formatDateTime(event.date, event.startTime, event.endTime)}</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif' }}>{event.name}</TableCell>
-                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.description}</TableCell>
-                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.venue}</TableCell>
-                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.location}</TableCell>
-                          <TableCell>
+              {availableYears.map(year => (
+                <MenuItem key={year} value={year}>{year}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {tab === 0 && (
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, minHeight: { md: 'calc(100vh - 300px)' } }}>
+            {/* Upcoming Events */}
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <Typography variant="h5" sx={{ 
+                fontFamily: 'Lora, serif', 
+                color: '#b45309', 
+                fontWeight: 600, 
+                mb: 2, 
+                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1
+              }}>
+                <CalendarToday /> Upcoming Events
+              </Typography>
+              
+              <Box sx={{ flex: 1, overflow: { xs: 'visible', md: 'hidden' } }}>
+                {upcomingEvents.length === 0 ? (
+                  <Card sx={{ textAlign: 'center', py: 4, background: 'rgba(255,255,255,0.8)', borderRadius: 3, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography sx={{ color: '#666', fontFamily: 'Lora, serif', fontSize: '1rem' }}>
+                      No upcoming events for {yearFilter}
+                    </Typography>
+                  </Card>
+                ) : (
+                  <Box sx={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, 
+                    gap: 2,
+                    height: '100%',
+                    overflowY: 'auto',
+                    pr: 1
+                  }}>
+                    {upcomingEvents.map((event: EventType) => (
+                      <Card key={event._id} sx={{ 
+                        borderRadius: 2, 
+                        boxShadow: '0 2px 12px rgba(222,107,47,0.15)',
+                        background: 'linear-gradient(135deg, #fff 0%, #fff7f0 100%)',
+                        border: '1px solid rgba(222,107,47,0.2)',
+                        transition: 'transform 0.2s ease',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 20px rgba(222,107,47,0.25)'
+                        },
+                        height: 'fit-content'
+                      }}>
+                        <CardContent sx={{ p: 2 }}>
+                          <Typography variant="h6" sx={{ 
+                            fontFamily: 'Lora, serif', 
+                            fontWeight: 700, 
+                            color: '#de6b2f', 
+                            mb: 1.5,
+                            fontSize: '1rem'
+                          }}>
+                            {event.name}
+                          </Typography>
+                          
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1, color: '#666' }}>
+                            <CalendarToday sx={{ fontSize: 14 }} />
+                            <Typography sx={{ fontFamily: 'Lora, serif', fontSize: '0.85rem' }}>
+                              {formatDateTime(event.date, event.startTime, event.endTime)}
+                            </Typography>
+                          </Box>
+                          
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5, color: '#666' }}>
+                            <LocationOn sx={{ fontSize: 14 }} />
+                            <Typography sx={{ fontFamily: 'Lora, serif', fontSize: '0.85rem' }}>
+                              {event.venue}, {event.location}
+                            </Typography>
+                          </Box>
+                          
+                          <Typography sx={{ 
+                            fontFamily: 'Lora, serif', 
+                            color: '#555', 
+                            mb: 2,
+                            fontSize: '0.8rem',
+                            lineHeight: 1.4,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}>
+                            {event.description}
+                          </Typography>
+                          
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Chip 
+                              label={event.eventType} 
+                              size="small"
+                              sx={{ 
+                                background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)',
+                                color: 'white',
+                                fontFamily: 'Lora, serif',
+                                fontWeight: 600,
+                                fontSize: '0.7rem'
+                              }} 
+                            />
+                            
                             {(() => {
                               const isRegistrationClosed = event.registrationDeadline && new Date() > new Date(event.registrationDeadline);
                               if (isRegistrationClosed) {
                                 return (
-                                  <Box sx={{ textAlign: 'center' }}>
-                                    <Typography sx={{ color: 'red', fontWeight: 600, fontSize: '0.9rem', mb: 0.5 }}>
-                                      Registrations Closed
-                                    </Typography>
-                                    <Typography sx={{ color: '#666', fontSize: '0.8rem' }}>
-                                      For queries reach admin
-                                    </Typography>
-                                  </Box>
+                                  <Typography sx={{ color: 'red', fontWeight: 600, fontSize: '0.75rem' }}>
+                                    Closed
+                                  </Typography>
                                 );
                               }
                               return (
                                 <Button
                                   variant="contained"
-                                  color="primary"
+                                  size="small"
                                   onClick={() => {
                                     if (!user) {
                                       alert('Please log in to register for events.');
@@ -328,147 +431,230 @@ export default function Events() {
                                     }
                                     handleRegisterClick(event);
                                   }}
-                                  sx={{ fontWeight: 700, fontFamily: 'Lora, serif', background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)', borderRadius: 2 }}
+                                  sx={{ 
+                                    background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)',
+                                    fontFamily: 'Lora, serif',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem',
+                                    px: 2
+                                  }}
                                 >
                                   Register
                                 </Button>
                               );
-                            })()}
+                            })()} 
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            </Box>
+
+            {/* Divider */}
+            <Box sx={{ 
+              width: { xs: '100%', md: '1px' }, 
+              height: { xs: '1px', md: '100%' }, 
+              background: 'linear-gradient(90deg, transparent, #de6b2f, transparent)',
+              my: { xs: 2, md: 0 },
+              mx: { xs: 0, md: 1 }
+            }} />
+
+            {/* Past Events */}
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <Typography variant="h5" sx={{ 
+                fontFamily: 'Lora, serif', 
+                color: '#b45309', 
+                fontWeight: 600, 
+                mb: 2, 
+                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1
+              }}>
+                📚 Past Events
+              </Typography>
+              
+              <Box sx={{ flex: 1, overflow: { xs: 'visible', md: 'hidden' } }}>
+                {pastEvents.length === 0 ? (
+                  <Card sx={{ textAlign: 'center', py: 4, background: 'rgba(255,255,255,0.8)', borderRadius: 3, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography sx={{ color: '#666', fontFamily: 'Lora, serif', fontSize: '1rem' }}>
+                      No past events for {yearFilter}
+                    </Typography>
+                  </Card>
+                ) : (
+                  <TableContainer component={Paper} sx={{ 
+                    borderRadius: 3, 
+                    boxShadow: '0 2px 12px rgba(222,107,47,0.15)',
+                    background: 'rgba(255,255,255,0.95)',
+                    height: { xs: 'auto', md: '100%' },
+                    overflow: 'auto'
+                  }}>
+                    <Table stickyHeader size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700, color: 'white', fontFamily: 'Lora, serif', background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)', fontSize: '0.85rem' }}>Date</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'white', fontFamily: 'Lora, serif', background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)', fontSize: '0.85rem' }}>Event</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'white', fontFamily: 'Lora, serif', background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)', fontSize: '0.85rem', display: { xs: 'none', md: 'table-cell' } }}>Description</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'white', fontFamily: 'Lora, serif', background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)', fontSize: '0.85rem' }}>Venue</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {pastEvents.map((event: EventType) => (
+                          <TableRow key={event._id} sx={{ '&:hover': { backgroundColor: '#fff7f0' } }}>
+                            <TableCell sx={{ fontFamily: 'Lora, serif', fontSize: '0.8rem', py: 1 }}>
+                              {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: '#de6b2f', fontFamily: 'Lora, serif', fontSize: '0.85rem', py: 1 }}>
+                              {event.name}
+                            </TableCell>
+                            <TableCell sx={{ fontFamily: 'Lora, serif', fontSize: '0.8rem', py: 1, display: { xs: 'none', md: 'table-cell' } }}>
+                              {event.description.length > 50 ? `${event.description.substring(0, 50)}...` : event.description}
+                            </TableCell>
+                            <TableCell sx={{ fontFamily: 'Lora, serif', fontSize: '0.8rem', py: 1 }}>
+                              {event.venue}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
+              </Box>
+            </Box>
+          </Box>
+        )}
+
+        {user && tab === 1 && (
+          <Box>
+            {registeredEvents.length === 0 ? (
+              <Card sx={{ textAlign: 'center', py: 6, background: 'rgba(255,255,255,0.8)', borderRadius: 3 }}>
+                <Typography sx={{ color: '#666', fontFamily: 'Lora, serif', fontSize: '1.1rem' }}>
+                  No event registrations found
+                </Typography>
+              </Card>
+            ) : (
+              <>
+                <TableContainer component={Paper} sx={{ 
+                  borderRadius: 3, 
+                  boxShadow: '0 4px 20px rgba(222,107,47,0.15)',
+                  background: 'rgba(255,255,255,0.95)',
+                  mb: 3
+                }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{ background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)' }}>
+                        <TableCell sx={{ fontWeight: 700, color: 'white', fontFamily: 'Lora, serif' }}>Event</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'white', fontFamily: 'Lora, serif' }}>Date</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'white', fontFamily: 'Lora, serif' }}>Venue</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'white', fontFamily: 'Lora, serif' }}>Registration ID</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'white', fontFamily: 'Lora, serif' }}>Status</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'white', fontFamily: 'Lora, serif' }}>Attendance</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'white', fontFamily: 'Lora, serif' }}>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {paginatedRegisteredEvents.map((reg: RegistrationType) => (
+                        <TableRow key={reg._id} sx={{ '&:hover': { backgroundColor: '#fff7f0' } }}>
+                          <TableCell sx={{ fontWeight: 600, color: '#de6b2f', fontFamily: 'Lora, serif' }}>
+                            {reg.eventId?.name}
+                          </TableCell>
+                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>
+                            {reg.eventId?.date ? formatDateTime(reg.eventId.date, reg.eventId.startTime, reg.eventId.endTime) : '-'}
+                          </TableCell>
+                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>
+                            {reg.eventId?.venue}, {reg.eventId?.location}
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                              <Chip 
+                                label={reg.registrationId || reg.registeredId || '-'}
+                                size="small"
+                                sx={{ fontFamily: 'monospace', fontWeight: 700 }}
+                              />
+                              {reg.status === 'approved' && reg.registrationId && (
+                                <Button 
+                                  size="small" 
+                                  variant="outlined" 
+                                  onClick={() => handleShowBarcode(reg.registrationId)}
+                                  sx={{ 
+                                    fontSize: '0.7rem', 
+                                    py: 0.5, 
+                                    borderColor: '#de6b2f',
+                                    color: '#de6b2f'
+                                  }}
+                                >
+                                  📱 QR Code
+                                </Button>
+                              )}
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={reg.status === 'approved' ? '✅ Approved' : reg.status === 'pending' ? '⏳ Pending' : '❌ Rejected'}
+                              color={reg.status === 'approved' ? 'success' : reg.status === 'pending' ? 'warning' : 'error'}
+                              size="small"
+                              sx={{ fontFamily: 'Lora, serif', fontWeight: 600 }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={reg.attended ? '✅ Attended' : '⏸️ Not Attended'}
+                              color={reg.attended ? 'success' : 'default'}
+                              size="small"
+                              sx={{ fontFamily: 'Lora, serif', fontWeight: 600 }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outlined" 
+                              size="small"
+                              onClick={() => setDetailsDialog({ open: true, registration: reg })}
+                              sx={{ 
+                                fontSize: '0.8rem',
+                                fontFamily: 'Lora, serif',
+                                borderColor: '#de6b2f',
+                                color: '#de6b2f',
+                                '&:hover': {
+                                  borderColor: '#b45309',
+                                  backgroundColor: '#fff3e0'
+                                }
+                              }}
+                            >
+                              👁️ Details
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </TableContainer>
-              </Box>
-              {/* Vertical Divider for desktop only */}
-              <Box
-                sx={{
-                  display: { xs: 'none', md: 'block' },
-                  width: '1px',
-                  background: '#e0e0e0',
-                  mx: 0,
-                  my: 2,
-                  height: 'auto',
-                  minHeight: 400,
-                  alignSelf: 'stretch',
-                }}
-              />
-              {/* Past Events Table */}
-              <Box sx={{ flex: 1, pl: { md: 2, xs: 0 } }}>
-                <Typography variant="h4" sx={{ fontFamily: 'Lora, serif', color: '#b45309', fontWeight: 600, mb: 2, textAlign: 'center' }}>
-                  Past Events
-                </Typography>
-                <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', height: '100%' }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Date & Time</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Event</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Description</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Venue</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Location</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {pastEvents.length === 0 && (
-                        <TableRow><TableCell colSpan={5}>No past events to display.</TableCell></TableRow>
-                      )}
-                      {Array.isArray(pastEvents) && pastEvents.map((event: EventType) => (
-                        <TableRow key={event._id}>
-                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.date ? formatDateTime(event.date, event.startTime, event.endTime) : '-'}</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: '#de6b2f', fontFamily: 'Lora, serif' }}>{event.name}</TableCell>
-                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.description}</TableCell>
-                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.venue}</TableCell>
-                          <TableCell sx={{ fontFamily: 'Lora, serif' }}>{event.location}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-            </Box>
-          </Box>
-        )}
-        {user && tab === 1 && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="h4" sx={{ fontFamily: 'Lora, serif', color: '#b45309', fontWeight: 600, mb: 2, textAlign: 'center' }}>
-              Registered Events
-            </Typography>
-            {registeredEvents.length === 0 ? (
-              <Typography sx={{ textAlign: 'center', color: '#888', fontFamily: 'Lora, serif' }}>No event registrations found.</Typography>
-            ) : (
-              <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', background: '#fff', mb: 4 }}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Event</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Date</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Venue</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Location</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Registration ID</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Status</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Attendance</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#b45309', fontFamily: 'Lora, serif' }}>Details</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {Array.isArray(registeredEvents) && registeredEvents.map((reg: RegistrationType) => (
-                      <TableRow key={reg._id}>
-                        <TableCell sx={{ fontWeight: 600, color: '#de6b2f', fontFamily: 'Lora, serif' }}>{reg.eventId?.name}</TableCell>
-                        <TableCell sx={{ fontFamily: 'Lora, serif' }}>{reg.eventId?.date ? formatDateTime(reg.eventId.date, reg.eventId.startTime, reg.eventId.endTime) : '-'}</TableCell>
-                        <TableCell sx={{ fontFamily: 'Lora, serif' }}>{reg.eventId?.venue}</TableCell>
-                        <TableCell sx={{ fontFamily: 'Lora, serif' }}>{reg.eventId?.location}</TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>
-                              {reg.registrationId || reg.registeredId || '-'}
-                            </Typography>
-                            {reg.status === 'approved' && reg.registrationId && (
-                              <Button 
-                                size="small" 
-                                variant="outlined" 
-                                onClick={() => handleShowBarcode(reg.registrationId)}
-                                sx={{ fontSize: '0.7rem', py: 0.5, alignSelf: 'flex-start' }}
-                              >
-                                Show QR Code
-                              </Button>
-                            )}
-                          </Box>
-                        </TableCell>
-                        <TableCell sx={{ color: reg.status === 'approved' ? 'green' : reg.status === 'pending' ? '#b45309' : 'red', fontWeight: 700, fontFamily: 'Lora, serif' }}>
-                          {reg.status === 'approved' ? 'Approved' : reg.status === 'pending' ? 'Pending' : 'Rejected'}
-                        </TableCell>
-                        <TableCell sx={{ color: reg.attended ? 'green' : '#888', fontWeight: 700, fontFamily: 'Lora, serif' }}>
-                          {reg.attended ? '✓ Attended' : 'Not Attended'}
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="outlined" 
-                            size="small"
-                            onClick={() => setDetailsDialog({ open: true, registration: reg })}
-                            sx={{ 
-                              fontSize: '0.8rem',
-                              fontFamily: 'Lora, serif',
-                              borderColor: '#de6b2f',
-                              color: '#de6b2f',
-                              '&:hover': {
-                                borderColor: '#b45309',
-                                backgroundColor: '#fff3e0'
-                              }
-                            }}
-                          >
-                            View Details
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                
+                {/* Pagination */}
+                {registeredEvents.length > registrationsPerPage && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                    <Pagination 
+                      count={Math.ceil(registeredEvents.length / registrationsPerPage)}
+                      page={currentPage}
+                      onChange={(_, page) => setCurrentPage(page)}
+                      color="primary"
+                      sx={{
+                        '& .MuiPaginationItem-root': {
+                          fontFamily: 'Lora, serif',
+                          fontWeight: 600
+                        }
+                      }}
+                    />
+                  </Box>
+                )}
+              </>
             )}
           </Box>
         )}
+
+        {/* Registration Dialog */}
         <Dialog open={registerOpen} onClose={handleRegisterClose} maxWidth="sm" fullWidth>
           <DialogTitle>Event Registration</DialogTitle>
           <DialogContent>
@@ -488,10 +674,10 @@ export default function Events() {
             <TextField label="Profession (optional)" name="profession" value={registerData.profession} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} disabled={registerData.forWhom === 'self'} />
             <TextField label="Address" name="address" value={registerData.address} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required disabled={registerData.forWhom === 'self'} />
             <TextField label="Which level have you completed in SKS" name="sksLevel" value={registerData.sksLevel} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required select>
-              {Array.isArray(SKS_LEVELS) && SKS_LEVELS.map(level => <MenuItem key={level} value={level}>{level}</MenuItem>)}
+              {SKS_LEVELS.map(level => <MenuItem key={level} value={level}>{level}</MenuItem>)}
             </TextField>
             <TextField label="Would you like to share your SKS Miracles" name="sksMiracle" value={registerData.sksMiracle} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} required select>
-              {Array.isArray(SKS_MIRACLES) && SKS_MIRACLES.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+              {SKS_MIRACLES.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
             </TextField>
             <TextField label="Any other details" name="otherDetails" value={registerData.otherDetails} onChange={handleRegisterChange} fullWidth sx={{ mb: 2 }} multiline minRows={2} />
           </DialogContent>
@@ -501,6 +687,7 @@ export default function Events() {
           </DialogActions>
         </Dialog>
 
+        {/* QR Code Dialog */}
         <Dialog open={barcodeDialog.open} onClose={() => setBarcodeDialog({ open: false, regId: '', qrCode: '' })} maxWidth="sm" fullWidth>
           <DialogTitle sx={{ textAlign: 'center', fontFamily: 'Lora, serif', color: '#de6b2f' }}>
             Registration QR Code
@@ -530,6 +717,7 @@ export default function Events() {
           </DialogActions>
         </Dialog>
 
+        {/* Details Dialog */}
         <Dialog open={detailsDialog.open} onClose={() => setDetailsDialog({ open: false, registration: null })} maxWidth="md" fullWidth>
           <DialogTitle sx={{ fontFamily: 'Lora, serif', color: '#de6b2f' }}>
             Registration Details
@@ -562,6 +750,7 @@ export default function Events() {
           </DialogActions>
         </Dialog>
 
+        {/* Toast */}
         <Snackbar
           open={toastOpen}
           autoHideDuration={4000}
@@ -581,4 +770,4 @@ export default function Events() {
       </Box>
     </main>
   );
-} 
+}

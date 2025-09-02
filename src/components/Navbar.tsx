@@ -3,22 +3,27 @@ import { AppBar, Toolbar, Typography, Box, IconButton, Drawer, List, ListItem, L
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { isFeatureEnabled } from '../config/features.ts';
 
 
 /**
  * Navigation links for the app.
  */
-const navLinks = [
-  { name: 'nav.home', to: '/' },
-  { name: 'nav.about', to: '#about' },
-  { name: 'nav.programs', to: '#programs' },
-  { name: 'nav.gallery', to: '#gallery' },
-  { name: 'nav.testimonials', to: '#testimonials' },
-  { name: 'nav.joinUs', to: '/join' },
-  { name: 'nav.events', to: '/events' },
-  { name: 'nav.courses', to: '/courses' },
-  // { name: 'nav.progress', to: '/progress' },
-];
+const getAllNavLinks = (isAdmin: boolean = false) => {
+  const allLinks = [
+    { name: 'nav.home', to: '/', feature: 'home' },
+    { name: 'nav.about', to: '#about', feature: 'about' },
+    { name: 'nav.programs', to: '#programs', feature: 'programs' },
+    { name: 'nav.gallery', to: '#gallery', feature: 'gallery' },
+    { name: 'nav.testimonials', to: '#testimonials', feature: 'testimonials' },
+    { name: 'nav.joinUs', to: '/join', feature: 'registration' },
+    { name: 'nav.events', to: '/events', feature: 'events' },
+    { name: 'nav.courses', to: '/courses', feature: 'courses' },
+  ];
+  
+  // Admin sees all features, regular users see only enabled features
+  return isAdmin ? allLinks : allLinks.filter(link => isFeatureEnabled(link.feature as any));
+};
 
 /**
  * Tabs to show in header on mobile.
@@ -38,11 +43,13 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
   const { t } = useTranslation();
   const isLoggedIn = !!user;
   const isAdmin = user && user.isAdmin;
+  
+  const navLinks = getAllNavLinks(isAdmin);
   let navLinksToUse = navLinks;
   if (isAdmin) {
     navLinksToUse = [
       ...navLinks.filter(link => link.name !== 'nav.admin'),
-      { name: 'nav.admin', to: '/admin' },
+      { name: 'nav.admin', to: '/admin', feature: 'admin' },
     ];
   }
   const filteredNavLinks = isLoggedIn ? navLinksToUse.filter(link => link.name !== 'nav.joinUs') : navLinksToUse;
@@ -104,7 +111,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
           </Box>
           {/* Login/Logout Button */}
           <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
-            {!isLoggedIn ? (
+            {!isLoggedIn && isFeatureEnabled('login') ? (
               <button
                 onClick={onLoginClick}
                 style={{
@@ -238,7 +245,7 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
             ))}
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {!isLoggedIn ? (
+            {!isLoggedIn && isFeatureEnabled('login') ? (
               <button
                 onClick={onLoginClick}
                 style={{
@@ -370,17 +377,19 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
               )
             ))}
             <Divider sx={{ my: 1 }} />
-            <ListItem disablePadding>
-              {!isLoggedIn ? (
-                <ListItemButton onClick={onLoginClick}>
-                  <ListItemText primary={t('nav.login')} />
-                </ListItemButton>
-              ) : (
-                <ListItemButton onClick={onLogoutClick}>
-                  <ListItemText primary={t('nav.logout')} />
-                </ListItemButton>
-              )}
-            </ListItem>
+            {isFeatureEnabled('login') && (
+              <ListItem disablePadding>
+                {!isLoggedIn ? (
+                  <ListItemButton onClick={onLoginClick}>
+                    <ListItemText primary={t('nav.login')} />
+                  </ListItemButton>
+                ) : (
+                  <ListItemButton onClick={onLogoutClick}>
+                    <ListItemText primary={t('nav.logout')} />
+                  </ListItemButton>
+                )}
+              </ListItem>
+            )}
           </List>
         </Box>
       </Drawer>
