@@ -59,3 +59,4 @@ const NetworkError: React.FC<NetworkErrorProps> = ({
 };
 
 export default NetworkError;
+

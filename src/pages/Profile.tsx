@@ -6,13 +6,13 @@ import {
   TextField,
   Button,
   Paper,
-  Grid,
+
   Divider,
   Alert,
   Container,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { getUserProfile, updateUserProfile } from "../services/api.ts";
+import { getUserProfile, updateUserProfile } from "../services/api";
 
 interface UserProfile {
   _id?: string;
@@ -72,14 +72,14 @@ export default function Profile() {
         setForm({
           email: userData.email || "",
           place: userData.place || "",
-          gender: userData.gender || "",
-          age: userData.age?.toString() || "",
-          preferredLang: userData.preferredLang || "",
-          refSource: userData.refSource || "",
-          referrerInfo: userData.referrerInfo || "",
-          country: userData.country || "",
-          profession: userData.profession || "",
-          address: userData.address || "",
+          gender: (userData as any).gender || "",
+          age: (userData as any).age?.toString() || "",
+          preferredLang: (userData as any).preferredLang || "",
+          refSource: (userData as any).refSource || "",
+          referrerInfo: (userData as any).referrerInfo || "",
+          country: (userData as any).country || "",
+          profession: (userData as any).profession || "",
+          address: (userData as any).address || "",
         });
       } catch {
         setError("Failed to load profile data");
@@ -109,7 +109,7 @@ export default function Profile() {
       
       await updateUserProfile(payload);
       const refreshed = await getUserProfile();
-      setUser(refreshed);
+      setUser(refreshed as any);
       localStorage.setItem("user", JSON.stringify(refreshed));
       setSuccess("Profile updated successfully!");
       
@@ -311,3 +311,4 @@ export default function Profile() {
     </Container>
   );
 }
+

@@ -36,3 +36,4 @@ export default function PermissionGuard({ children, category, action, fallback }
 
   return <>{children}</>;
 }
+

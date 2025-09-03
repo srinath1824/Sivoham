@@ -25,3 +25,4 @@ export const validateMobile = (mobile: string): boolean => {
   const mobileRegex = /^[0-9]{10}$/;
   return mobileRegex.test(mobile);
 };
+

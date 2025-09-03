@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Grid from '@mui/material/Grid';
-import { Box, Typography, TextField, Button, Alert, MenuItem, Divider, Stepper, Step, StepLabel } from '@mui/material';
-import { register as apiRegister } from '../services/api.ts';
+import { Box, Typography, TextField, Button, Alert, MenuItem, Stepper, Step, StepLabel } from '@mui/material';
+import { register as apiRegister } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
@@ -122,7 +122,7 @@ function validateAge(age: string) {
   return n >= 1 && n <= 120;
 }
 
-export default function Join({ handleLogin }) {
+export default function Join({ handleLogin }: { handleLogin: any }) {
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -170,7 +170,7 @@ export default function Join({ handleLogin }) {
   const otherDetailsErrors = ['place', 'refSource', 'referrerInfo'];
   
   const isPersonalDetailsValid = personalDetailsErrors.every(field => !errors[field]);
-  const isOtherDetailsValid = otherDetailsErrors.every(field => !errors[field]);
+
   const isFormValid = Object.keys(errors).length === 0;
 
   const handleBlur = (field: string) => setTouched(t => ({ ...t, [field]: true }));
@@ -222,8 +222,8 @@ export default function Join({ handleLogin }) {
         message
       });
       setSuccess('Thank you for joining! Your details have been submitted.');
-      if (handleLogin && res && res.user && res.token) {
-        handleLogin(res.user, res.token);
+      if (handleLogin && res && (res as any).user && (res as any).token) {
+        handleLogin((res as any).user, (res as any).token);
       }
       setFirstName(''); setLastName(''); setMobile(''); setEmail(''); setComment(''); setMessage(''); setPlace(''); setGender(''); setAge(''); setPreferredLang(''); setRefSource(''); setRefSourceOther(''); setReferrerInfo(''); setCountry(''); setProfession(''); setAddress(''); setTouched({});
       setTimeout(() => {
@@ -778,3 +778,4 @@ export default function Join({ handleLogin }) {
     </ThemeProvider>
   );
 } 
+

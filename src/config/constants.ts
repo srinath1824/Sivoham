@@ -1,7 +1,7 @@
 /**
  * Application-wide constants and configuration for Siva Kundalini Sadhana React app.
  */
-import courseConfig from './courseConfig.ts';
+import courseConfig from './courseConfig';
 
 /**
  * If true, skips login and allows open access (for development/demo).
@@ -167,3 +167,4 @@ export const UPCOMING_EVENTS = [
     location: 'Bangalore'
   },
 ];
+

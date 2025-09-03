@@ -319,7 +319,7 @@ const VideoMeditationTest: React.FC<VideoMeditationTestProps> = ({
         }}
       >
         <video
-          ref={videoRef}
+          ref={videoRef as React.RefObject<HTMLVideoElement>}
           autoPlay
           muted
           playsInline
@@ -377,3 +377,4 @@ const VideoMeditationTest: React.FC<VideoMeditationTestProps> = ({
 };
 
 export default VideoMeditationTest;
+

@@ -1,12 +1,14 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, RadioGroup, FormControlLabel, Radio, Alert, Tabs, Tab, Snackbar, Card, CardContent, Chip, Pagination, FormControl, InputLabel, Select } from '@mui/material';
-import { CalendarToday, LocationOn, AccessTime, People } from '@mui/icons-material';
+import { CalendarToday, LocationOn } from '@mui/icons-material';
 import axios from 'axios';
 import QRCode from 'qrcode';
-import { API_URL } from '../services/api.ts';
-import { isFeatureEnabled } from '../config/features.ts';
-import JaiGurudevLoader from '../components/JaiGurudevLoader.tsx';
+import { API_URL } from '../services/api';
+import { isFeatureEnabled } from '../config/features';
+import JaiGurudevLoader from '../components/JaiGurudevLoader';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/AuthContext';
+import { useApp } from '../contexts/AppContext';
 
 interface EventType {
   _id: string;
@@ -54,11 +56,8 @@ const formatDateTime = (dateStr: string, startTime?: string, endTime?: string) =
 
 export default function Events() {
   const { t } = useTranslation();
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [token, setToken] = useState(() => localStorage.getItem('token') || '');
+  const { user } = useAuth();
+  const { eventFilters, updateEventFilters } = useApp();
   const [events, setEvents] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -76,16 +75,16 @@ export default function Events() {
     forWhom: 'self',
   });
   const [registerError, setRegisterError] = useState('');
-  const [registerSuccess, setRegisterSuccess] = useState('');
+
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registeredEvents, setRegisteredEvents] = useState<RegistrationType[]>([]);
   const [tab, setTab] = useState(0);
   const [barcodeDialog, setBarcodeDialog] = useState<{ open: boolean; regId: string; qrCode: string }>({ open: false, regId: '', qrCode: '' });
   const [detailsDialog, setDetailsDialog] = useState<{ open: boolean; registration: RegistrationType | null }>({ open: false, registration: null });
   const [toastOpen, setToastOpen] = useState(false);
-  const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear());
+  const [yearFilter, setYearFilter] = useState<number>(eventFilters.year);
   const [currentPage, setCurrentPage] = useState(1);
-  const [eventsPerPage] = useState(6);
+
   const [registrationsPerPage] = useState(10);
 
   const SKS_LEVELS = [
@@ -156,17 +155,17 @@ export default function Events() {
     setRegisterData({
       fullName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
       mobile: user?.mobile || '',
-      gender: user?.gender || '',
-      age: user?.age?.toString() || '',
-      profession: user?.profession || '',
-      address: user?.address || user?.place || '',
+      gender: (user as any)?.gender || '',
+      age: (user as any)?.age?.toString() || '',
+      profession: (user as any)?.profession || '',
+      address: (user as any)?.address || (user as any)?.place || '',
       sksLevel: '',
       sksMiracle: '',
       otherDetails: '',
       forWhom: 'self',
     });
     setRegisterError('');
-    setRegisterSuccess('');
+    
   };
 
   const handleRegisterClose = () => {
@@ -183,10 +182,10 @@ export default function Events() {
           [name]: value,
           fullName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
           mobile: user?.mobile || '',
-          gender: user?.gender || '',
-          age: user?.age?.toString() || '',
-          profession: user?.profession || '',
-          address: user?.address || user?.place || '',
+          gender: (user as any)?.gender || '',
+          age: (user as any)?.age?.toString() || '',
+          profession: (user as any)?.profession || '',
+          address: (user as any)?.address || (user as any)?.place || '',
         });
       } else {
         setRegisterData({
@@ -219,7 +218,7 @@ export default function Events() {
 
   const handleRegisterSubmit = async () => {
     setRegisterError('');
-    setRegisterSuccess('');
+    
     const err = validateRegister();
     if (err) {
       setRegisterError(err);
@@ -234,7 +233,7 @@ export default function Events() {
         otherDetails: registerData.otherDetails && registerData.otherDetails.trim() !== '' ? registerData.otherDetails : null
       };
       const res = await axios.post(`${API_URL}/event-registrations`, payload);
-      setRegisterSuccess(`Registration successful! Your ID: ${res.data.registrationId} (Status: ${res.data.status})`);
+      
       setRegisterOpen(false);
       if (registerData.mobile) fetchRegisteredEvents(registerData.mobile);
     } catch (err: any) {
@@ -306,7 +305,11 @@ export default function Events() {
             <Select
               value={yearFilter}
               label="Filter by Year"
-              onChange={(e) => setYearFilter(Number(e.target.value))}
+              onChange={(e) => {
+                const year = Number(e.target.value);
+                setYearFilter(year);
+                updateEventFilters({ year });
+              }}
               sx={{ borderRadius: 2 }}
             >
               {availableYears.map(year => (
@@ -785,3 +788,4 @@ export default function Events() {
     </main>
   );
 }
+

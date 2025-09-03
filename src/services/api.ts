@@ -1,9 +1,52 @@
-export const API_URL = process.env.REACT_APP_API_URL || 'https://sks-server-production.up.railway.app/api';
+import { captureException, captureMessage } from './monitoring';
 
-console.log('API Configuration:');
-console.log('- API_URL:', API_URL);
-console.log('- REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
-console.log('- NODE_ENV:', process.env.NODE_ENV);
+export const API_URL = process.env.REACT_APP_API_URL || '/api';
+
+// Enterprise API Configuration
+const API_CONFIG = {
+  timeout: 30000,
+  retryAttempts: 3,
+  retryDelay: 1000,
+  cacheTimeout: 5 * 60 * 1000,
+} as const;
+
+// Simple in-memory cache for GET requests
+const cache = new Map<string, { data: any; timestamp: number }>();
+
+if (process.env.NODE_ENV === 'development') {
+  console.log('API Configuration:', {
+    API_URL,
+    timeout: API_CONFIG.timeout,
+    retryAttempts: API_CONFIG.retryAttempts,
+  });
+}
+
+// Enterprise Error Types
+class ApiError extends Error {
+  constructor(
+    message: string,
+    public status?: number,
+    public code?: string,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+class NetworkError extends Error {
+  constructor(message: string = 'Network connection failed') {
+    super(message);
+    this.name = 'NetworkError';
+  }
+}
+
+class TimeoutError extends Error {
+  constructor(message: string = 'Request timeout') {
+    super(message);
+    this.name = 'TimeoutError';
+  }
+}
 
 /**
  * Check if we're in offline mode or have network issues
@@ -11,276 +54,384 @@ console.log('- NODE_ENV:', process.env.NODE_ENV);
 function isNetworkError(error: any): boolean {
   return !navigator.onLine || 
          error.name === 'NetworkError' || 
-         error.message?.includes('fetch') ||
-         error.message?.includes('network') ||
+         error.name === 'TimeoutError' ||
+         (error as Error).message?.includes('fetch') ||
+         (error as Error).message?.includes('network') ||
          error.code === 'NETWORK_ERROR';
 }
 
 /**
- * Handle API errors gracefully
+ * Sleep utility for retry delays
  */
-function handleApiError(error: any, fallbackMessage: string) {
-  if (isNetworkError(error)) {
-    throw new Error('Network connection failed. Please check your internet connection and try again.');
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Retry wrapper with exponential backoff
+ */
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  attempts: number = API_CONFIG.retryAttempts,
+  delay: number = API_CONFIG.retryDelay
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (attempts <= 1 || !isNetworkError(error)) {
+      throw error;
+    }
+    
+    await sleep(delay);
+    return withRetry(operation, attempts - 1, delay * 2); // Exponential backoff
   }
-  throw new Error(error.message || fallbackMessage);
 }
 
 /**
- *
+ * Create cache key for GET requests
  */
-function getToken() {
-  return localStorage.getItem('token');
+function getCacheKey(url: string, headers?: Record<string, string>): string {
+  const token = headers?.Authorization || '';
+  return `${url}:${token}`;
 }
 
 /**
- *
- * @param extra
+ * Get cached data if valid
  */
-function buildHeaders(extra: Record<string, string> = {}) {
+function getCachedData(key: string): any | null {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < API_CONFIG.cacheTimeout) {
+    return cached.data;
+  }
+  cache.delete(key);
+  return null;
+}
+
+/**
+ * Set cache data
+ */
+function setCacheData(key: string, data: any): void {
+  cache.set(key, { data, timestamp: Date.now() });
+}
+
+/**
+ * Enhanced fetch with timeout
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeout: number = API_CONFIG.timeout
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new TimeoutError(`Request timeout after ${timeout}ms`);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Handle API errors gracefully with proper logging
+ */
+function handleApiError(error: any, context: string, url?: string) {
+  const errorInfo = {
+    context,
+    url,
+    message: (error as Error).message,
+    status: error.status,
+    timestamp: new Date().toISOString(),
+  };
+
+  if (isNetworkError(error)) {
+    captureMessage(`Network error in ${context}`, 'warning');
+    throw new NetworkError('Network connection failed. Please check your internet connection and try again.');
+  }
+
+  captureException(error, errorInfo);
+  
+  if (error instanceof ApiError) {
+    throw error;
+  }
+  
+  throw new ApiError((error as Error).message || `${context} failed`, error.status);
+}
+
+/**
+ * Get authentication token from secure storage
+ */
+function getToken(): string | null {
+  try {
+    return localStorage.getItem('token');
+  } catch (error) {
+    captureException(error as Error, { context: 'getToken' });
+    return null;
+  }
+}
+
+/**
+ * Build request headers with authentication and security headers
+ */
+function buildHeaders(extra: Record<string, string> = {}): Record<string, string> {
   const token = getToken();
-  const headers: Record<string, string> = { ...extra };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+    ...extra,
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
   return headers;
 }
 
-// Auth
+/**
+ * Generic API request handler with enterprise features
+ */
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  useCache: boolean = false
+): Promise<T> {
+  const url = `${API_URL}${endpoint}`;
+  const headers = buildHeaders(options.headers as Record<string, string>);
+  
+  // Check cache for GET requests
+  if (useCache && (!options.method || options.method === 'GET')) {
+    const cacheKey = getCacheKey(url, headers);
+    const cachedData = getCachedData(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+  }
+
+  const requestOptions: RequestInit = {
+    ...options,
+    headers,
+  };
+
+  try {
+    const response = await withRetry(() => fetchWithTimeout(url, requestOptions));
+    
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      let errorDetails;
+      
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+        errorDetails = errorData;
+      } catch {
+        // Response is not JSON, use status text
+      }
+      
+      throw new ApiError(errorMessage, response.status, 'HTTP_ERROR', errorDetails);
+    }
+
+    const data = await response.json();
+    
+    // Cache successful GET requests
+    if (useCache && (!options.method || options.method === 'GET')) {
+      const cacheKey = getCacheKey(url, headers);
+      setCacheData(cacheKey, data);
+    }
+    
+    return data;
+  } catch (error: any) {
+    handleApiError(error, `API request to ${endpoint}`, url);
+    throw error; // This line won't be reached due to handleApiError throwing
+  }
+}
+
+// Auth API Methods
 /**
  * Login with mobile and OTP
- * @param mobile
- * @param otp
  */
 export async function login(mobile: string, otp: string) {
-  try {
-    const res = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: buildHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ mobile, otp }),
-    });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({ error: 'Login failed' }));
-      throw new Error(errorData.error || 'Login failed');
-    }
-    return res.json();
-  } catch (error: any) {
-    handleApiError(error, 'Login failed');
-  }
+  return apiRequest('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ mobile, otp }),
+  });
 }
 
 /**
  * Register with all user fields as top-level properties
- * @param userData
  */
 export async function register(userData: any) {
-  try {
-    const res = await fetch(`${API_URL}/auth/register`, {
-      method: 'POST',
-      headers: buildHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(userData),
-    });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({ error: 'Registration failed' }));
-      throw new Error(errorData.error || 'Registration failed');
-    }
-    return res.json();
-  } catch (error: any) {
-    handleApiError(error, 'Registration failed');
-  }
+  return apiRequest('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  });
 }
 
 /**
  * Check if a user exists and is registered by mobile number
  */
 export async function checkMobileRegistered(mobile: string) {
-  const res = await fetch(`${API_URL}/auth/check-mobile`, {
+  return apiRequest('/auth/check-mobile', {
     method: 'POST',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ mobile }),
   });
-  if (!res.ok) throw new Error('Failed to check mobile');
-  return res.json();
 }
 
-// Progress
+// Progress API Methods
 /**
- *
+ * Get user progress with caching
  */
 export async function getProgress() {
-  const res = await fetch(`${API_URL}/progress`, { headers: buildHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch progress');
-  const data = await res.json();
-  return data.progress || data; // Handle both response formats
+  const data = await apiRequest('/progress', {}, true);
+  return (data as any).progress || data; // Handle both response formats
 }
 
 /**
- *
- * @param data
+ * Update user progress
  */
 export async function updateProgress(data: any) {
-  const res = await fetch(`${API_URL}/progress`, {
+  // Clear progress cache when updating
+  const cacheKey = getCacheKey(`${API_URL}/progress`, buildHeaders());
+  cache.delete(cacheKey);
+  
+  return apiRequest('/progress', {
     method: 'POST',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to update progress');
-  return res.json();
 }
 
-// LevelTest
+// Level Test API Methods
 /**
- *
+ * Get level tests with caching
  */
 export async function getLevelTests() {
-  const res = await fetch(`${API_URL}/levelTest`, { headers: buildHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch level tests');
-  return res.json();
+  return apiRequest('/levelTest', {}, true);
 }
 
 /**
- *
- * @param data
+ * Update level test
  */
 export async function updateLevelTest(data: any) {
-  const res = await fetch(`${API_URL}/levelTest`, {
+  return apiRequest('/levelTest', {
     method: 'POST',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to update level test');
-  return res.json();
 }
 
-// Admin
+// Admin API Methods
 /**
- * Get all non-admin users (for admin approval)
+ * Get all non-admin users (for admin approval) with caching
  */
 export async function getUsers() {
-  const res = await fetch(`${API_URL}/admin/users`, { headers: buildHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch users');
-  return res.json();
+  return apiRequest('/admin/users', {}, true);
 }
 
 /**
- *
- * @param userId
+ * Reset user data
  */
 export async function resetUser(userId: string) {
-  const res = await fetch(`${API_URL}/admin/user/${userId}/reset`, {
+  return apiRequest(`/admin/user/${userId}/reset`, {
     method: 'POST',
-    headers: buildHeaders(),
   });
-  if (!res.ok) throw new Error('Failed to reset user');
-  return res.json();
 }
 
 /**
  * Approve a user registration (set isSelected to true)
- * @param userId
  */
 export async function approveUser(userId: string) {
-  const res = await fetch(`${API_URL}/admin/user/${userId}/approve`, {
+  return apiRequest(`/admin/user/${userId}/approve`, {
     method: 'POST',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
   });
-  if (!res.ok) throw new Error('Failed to approve user');
-  return res.json();
 }
 
 /**
  * Reject a user registration (delete or mark as rejected)
- * @param userId
  */
 export async function rejectUser(userId: string) {
-  const res = await fetch(`${API_URL}/admin/user/${userId}/reject`, {
+  return apiRequest(`/admin/user/${userId}/reject`, {
     method: 'POST',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
   });
-  if (!res.ok) throw new Error('Failed to reject user');
-  return res.json();
 }
 
 /**
  * Update user details (admin edit)
- * @param userId
- * @param data
  */
 export async function updateUser(userId: string, data: any) {
-  const res = await fetch(`${API_URL}/user/${userId}`, {
+  return apiRequest(`/user/${userId}`, {
     method: 'PUT',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to update user');
-  return res.json();
 }
 
 /**
  * Securely fetch the current user's profile from the backend
  */
 export async function getUserProfile() {
-  try {
-    const res = await fetch(`${API_URL}/user/me/profile`, { headers: buildHeaders() });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({ error: 'Failed to fetch user profile' }));
-      throw new Error(errorData.error || 'Failed to fetch user profile');
-    }
-    return res.json();
-  } catch (error: any) {
-    handleApiError(error, 'Failed to fetch user profile');
-  }
+  return apiRequest('/user/me/profile', {}, true);
 }
 
 /**
  * Mark attendance for event registration
- * @param registrationId
  */
 export async function markAttendance(registrationId: string) {
-  const res = await fetch(`${API_URL}/event-registrations/${registrationId}/attend`, {
+  return apiRequest(`/event-registrations/${registrationId}/attend`, {
     method: 'PUT',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
   });
-  if (!res.ok) throw new Error((await res.json()).error || 'Failed to mark attendance');
-  return res.json();
 }
 
 /**
  * Bulk approve multiple users
- * @param userIds
  */
 export async function bulkApproveUsers(userIds: string[]) {
-  const res = await fetch(`${API_URL}/admin/users/bulk-approve`, {
+  return apiRequest('/admin/users/bulk-approve', {
     method: 'POST',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ userIds }),
   });
-  if (!res.ok) throw new Error('Failed to bulk approve users');
-  return res.json();
 }
 
 /**
  * Bulk reject multiple users
- * @param userIds
  */
 export async function bulkRejectUsers(userIds: string[]) {
-  const res = await fetch(`${API_URL}/admin/users/bulk-reject`, {
+  return apiRequest('/admin/users/bulk-reject', {
     method: 'POST',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ userIds }),
   });
-  if (!res.ok) throw new Error('Failed to bulk reject users');
-  return res.json();
 }
 
 /**
  * Update the user's profile
- * @param data
  */
 export async function updateUserProfile(data: any) {
-  const res = await fetch(`${API_URL}/user/profile`, {
+  // Clear user profile cache when updating
+  const cacheKey = getCacheKey(`${API_URL}/user/me/profile`, buildHeaders());
+  cache.delete(cacheKey);
+  
+  return apiRequest('/user/profile', {
     method: 'PUT',
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to update profile');
-  return res.json();
 }
+
+// Export error classes for use in components
+export { ApiError, NetworkError, TimeoutError };
+
+// Cache management utilities
+export const cacheUtils = {
+  clear: () => cache.clear(),
+  delete: (key: string) => cache.delete(key),
+  size: () => cache.size,
+};
+
+// Health check endpoint
+export async function healthCheck() {
+  return apiRequest('/health', {}, false);
+}
+

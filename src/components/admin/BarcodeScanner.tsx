@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Box, Typography, Button, Alert, Paper, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { Event, Person, Cake, Work, School, CheckCircle, LocationOn, Group, CalendarToday } from '@mui/icons-material';
-import { markAttendance, API_URL } from '../../services/api.ts';
-import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
+import { markAttendance, API_URL } from '../../services/api';
+import JaiGurudevLoader from '../JaiGurudevLoader';
 import axios from 'axios';
 import jsQR from 'jsqr';
 
@@ -81,7 +81,7 @@ export default function BarcodeScanner() {
       }, 100);
       
     } catch (error) {
-      setMessage(`Camera error: ${error.message}`);
+      setMessage(`Camera error: ${(error as Error).message}`);
       setMessageType('error');
     }
   };
@@ -188,18 +188,18 @@ export default function BarcodeScanner() {
       setEventRegistrations(prev => 
         prev.map(reg => 
           reg.registrationId === userDetailsDialog.user.registrationId 
-            ? { ...reg, attended: true, attendedAt: response.attendedAt || new Date() }
+            ? { ...reg, attended: true, attendedAt: (response as any).attendedAt || new Date() }
             : reg
         )
       );
       
-      setMessage(`✓ ${response.message || 'Attendance marked successfully'}`);
+      setMessage(`✓ ${(response as any).message || 'Attendance marked successfully'}`);
       setMessageType('success');
       playSound('success');
       setUserDetailsDialog({ open: false, user: null });
     } catch (error: any) {
       console.error('Mark attendance error:', error);
-      const errorMessage = error.message || 'Failed to mark attendance';
+      const errorMessage = (error as Error).message || 'Failed to mark attendance';
       setMessage(`❌ ${errorMessage}`);
       setMessageType('error');
       playSound('error');
@@ -394,7 +394,7 @@ export default function BarcodeScanner() {
                 maxWidth: 500
               }}>
                 <video
-                  ref={videoRef}
+                  ref={videoRef as React.RefObject<HTMLVideoElement>}
                   autoPlay
                   playsInline
                   muted
@@ -613,3 +613,4 @@ export default function BarcodeScanner() {
     </Box>
   );
 }
+

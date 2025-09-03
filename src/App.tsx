@@ -1,46 +1,27 @@
-import React, { useState, Suspense, lazy, useEffect } from 'react';
+import { useState, Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import Navbar from './components/Navbar.tsx';
-import Footer from './components/Footer.tsx';
-import JaiGurudevLoader from './components/JaiGurudevLoader.tsx';
-import Home from './pages/Home.tsx';
-import LoginDialog from './components/LoginDialog.tsx';
-import Join from './pages/Join.tsx';
-import AdminRequests from './pages/AdminRequests.tsx';
-import { getUserProfile } from './services/api.ts';
-import Profile from './pages/Profile.tsx';
-import { PermissionProvider } from './contexts/PermissionContext.tsx';
-import EventScrollBanner from './components/EventScrollBanner.tsx';
-import ErrorBoundary from './components/ErrorBoundary.tsx';
-import NetworkError from './components/NetworkError.tsx';
-import { isFeatureEnabled } from './config/features.ts';
-import ProtectedRoute from './components/ProtectedRoute.tsx';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import JaiGurudevLoader from './components/JaiGurudevLoader';
+import Home from './pages/Home';
+import LoginDialog from './components/LoginDialog';
+import Join from './pages/Join';
+import AdminRequests from './pages/AdminRequests';
+import { getUserProfile } from './services/api';
+import Profile from './pages/Profile';
+import { PermissionProvider } from './contexts/PermissionContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AppProvider, useApp } from './contexts/AppContext';
+import EventScrollBanner from './components/EventScrollBanner';
+import ErrorBoundary from './components/ErrorBoundary';
+import { isFeatureEnabled } from './config/features';
+import ProtectedRoute from './components/ProtectedRoute';
 
-interface UserProfile {
-  _id?: string;
-  userId?: string;
-  mobile: string;
-  firstName: string;
-  lastName: string;
-  email?: string;
-  comment?: string;
-  isAdmin: boolean;
-  isSelected: boolean;
-  place?: string;
-  gender?: string;
-  age?: number;
-  preferredLang?: string;
-  refSource?: string;
-  referrerInfo?: string;
-  country?: string;
-  profession?: string;
-  address?: string;
-}
+// Lazy load components with error boundaries
+const Courses = lazy(() => import('./pages/Courses'));
+const Events = lazy(() => import('./pages/Events'));
 
-const Courses = lazy(() => import('./pages/Courses.tsx'));
-const Progress = lazy(() => import('./pages/Progress.tsx'));
 
-const Events = lazy(() => import('./pages/Events.tsx'));
 
 /**
  * Main application component for Siva Kundalini Sadhana React app.
@@ -48,79 +29,50 @@ const Events = lazy(() => import('./pages/Events.tsx'));
  * @returns {JSX.Element}
  */
 function App({ navigate }: { navigate: any }) {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const { user, login, logout, loading } = useAuth();
+  const { setLastVisitedPage } = useApp();
   const [loginOpen, setLoginOpen] = useState(false);
-  const [loadingUser, setLoadingUser] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
-    async function fetchUserProfileSecure() {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setUser(null);
-        setLoadingUser(false);
+    // Track page visits
+    setLastVisitedPage(location.pathname);
+  }, [location.pathname, setLastVisitedPage]);
+
+  // Global error handler
+  useEffect(() => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (event.reason?.message?.includes('MetaMask')) {
+        event.preventDefault();
         return;
       }
-      try {
-        const profile = await getUserProfile();
-        setUser(profile);
-        localStorage.setItem('user', JSON.stringify(profile));
-      } catch (err) {
-        console.warn('Failed to fetch user profile:', err);
-        // Don't clear user data on network errors, only on auth errors
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-          try {
-            setUser(JSON.parse(savedUser));
-          } catch {
-            setUser(null);
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
-          }
-        } else {
-          setUser(null);
-          localStorage.removeItem('token');
-        }
-      }
-      setLoadingUser(false);
-    }
-    setLoadingUser(true);
-    fetchUserProfileSecure();
-  }, [location.pathname]);
+      console.error('Unhandled promise rejection:', event.reason);
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    return () => window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+  }, []);
 
   async function handleLogin(u: any, token: string) {
-    if (token) localStorage.setItem('token', token);
-    setLoginOpen(false);
-    setLoadingUser(true);
     try {
       const profile = await getUserProfile();
-      setUser(profile);
-      localStorage.setItem('user', JSON.stringify(profile));
+      login(profile as any, token);
     } catch (err) {
       console.warn('Failed to fetch user profile after login:', err);
-      // Use the provided user data as fallback
       if (u) {
-        setUser(u);
-        localStorage.setItem('user', JSON.stringify(u));
-      } else {
-        setUser(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        login(u, token);
       }
     }
-    setLoadingUser(false);
+    setLoginOpen(false);
     if (navigate) navigate('/');
   }
 
   /**
-   * Handles logout and clears user from localStorage.
+   * Handles logout and clears user data.
    */
   function handleLogout() {
-    setUser(null);
-    localStorage.clear();
-    sessionStorage.clear();
+    logout();
     setLoginOpen(false);
-    window.location.href = '/';
   }
 
   /**
@@ -132,21 +84,21 @@ function App({ navigate }: { navigate: any }) {
     }
   }
 
-  if (loadingUser) {
+  if (loading) {
     return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><JaiGurudevLoader size="large" /></div>;
   }
 
   return (
     <ErrorBoundary>
       <div className="app-container">
-        <Navbar onLoginClick={handleLoginClick} user={user} onLogoutClick={handleLogout} />
-        <ErrorBoundary>
-          <EventScrollBanner />
-        </ErrorBoundary>
-        {isFeatureEnabled('login') && (
-          <LoginDialog open={loginOpen} onLoginSuccess={handleLogin} onClose={() => setLoginOpen(false)} />
-        )}
-        <Routes>
+          <Navbar onLoginClick={handleLoginClick} user={user} onLogoutClick={handleLogout} />
+          <ErrorBoundary>
+            <EventScrollBanner />
+          </ErrorBoundary>
+          {isFeatureEnabled('login') && (
+            <LoginDialog open={loginOpen} onLoginSuccess={handleLogin} onClose={() => setLoginOpen(false)} />
+          )}
+          <Routes>
         <Route path="/" element={<Home user={user} />} />
         <Route path="/join" element={
           <ProtectedRoute feature="registration" user={user}>
@@ -206,24 +158,23 @@ function App({ navigate }: { navigate: any }) {
             </ErrorBoundary>
           </ProtectedRoute>
         } />
-        </Routes>
-        <Footer />
+          </Routes>
+          <Footer />
       </div>
     </ErrorBoundary>
   );
 }
 
 /**
- * Message shown when login is required to access a route.
- * @returns {JSX.Element}
+ * Login required message component.
  */
+/*
 function LoginRequiredMessage({ onLoginClick }: { onLoginClick: () => void }) {
   return (
     <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fff7f0', borderRadius: 16, boxShadow: '0 2px 12px rgba(222,107,47,0.07)', margin: '2rem auto', maxWidth: 480, padding: '2.5rem 1.5rem' }}>
       <span style={{ fontSize: 54, color: '#de6b2f', marginBottom: 16 }}>🔒</span>
       <h2 style={{ color: '#de6b2f', fontFamily: 'Lora, serif', fontWeight: 700, marginBottom: 12, fontSize: '2rem', textAlign: 'center' }}>Login Required</h2>
-      <p style={{ color: '#1a2341', fontFamily: 'Lora, serif', fontSize: '1.15rem', textAlign: 'center', marginBottom: 0 }}>
-        You can only view this page if you are <b>logged in</b>.<br />
+      <p style={{ color: '#1a2341', fontFamily: 'Lora, serif', fontSize: '1.15rem', textAlign: 'center', marginBottom: 24 }}>
         Please log in to access your courses and progress.
       </p>
       <button
@@ -247,6 +198,7 @@ function LoginRequiredMessage({ onLoginClick }: { onLoginClick: () => void }) {
     </div>
   );
 }
+*/
 
 /**
  * Loader component for section loading states.
@@ -284,24 +236,30 @@ function AppWithRouter() {
 export default function RootApp() {
   useEffect(() => {
     // Suppress MetaMask extension errors globally
-    window.addEventListener('error', (e) => {
+    const handleError = (e: ErrorEvent) => {
       if (e.message?.includes('MetaMask') || e.filename?.includes('chrome-extension')) {
         e.preventDefault();
-        return false;
       }
-    });
+    };
     
-    window.addEventListener('unhandledrejection', (e) => {
+    const handleRejection = (e: PromiseRejectionEvent) => {
       if (e.reason?.message?.includes('MetaMask')) {
         e.preventDefault();
-        return false;
       }
-    });
+    };
+    
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleRejection);
   }, []);
   
   return (
     <Router>
-      <AppWithRouter />
+      <AuthProvider>
+        <AppProvider>
+          <AppWithRouter />
+        </AppProvider>
+      </AuthProvider>
     </Router>
   );
 }
+

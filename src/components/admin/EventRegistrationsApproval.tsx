@@ -4,10 +4,10 @@ import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead
 import { Person, Phone, Wc, Cake, Work, LocationOn, School, Star, Info, Group, Badge, Event } from '@mui/icons-material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import AdminFilters from './AdminFilters.tsx';
-import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
+import AdminFilters from './AdminFilters';
+import JaiGurudevLoader from '../JaiGurudevLoader';
 import QRCode from 'qrcode';
-import { API_URL } from '../../services/api.ts';
+import { API_URL } from '../../services/api';
 
 export default function EventRegistrationsApproval() {
   const [registrations, setRegistrations] = useState<any[]>([]);
@@ -213,10 +213,9 @@ export default function EventRegistrationsApproval() {
           ctx.fillText(`🆔 ${barcodeDialog.regId}`, centerX, y);
           
           // Convert to blob and copy
-          canvas.toBlob(async (blob) => {
-            await navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob })
-            ]);
+          canvas.toBlob(async (blob) => { if (blob) { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })
+              ]);
+            }
             setShowToast(true);
           });
         };
@@ -549,10 +548,9 @@ Registrations will start by 8am
                                 y += 22;
                                 ctx.fillText(`🆔 ${reg.registrationId}`, centerX, y);
                                 
-                                canvas.toBlob(async (blob) => {
-                                  await navigator.clipboard.write([
-                                    new ClipboardItem({ 'image/png': blob })
-                                  ]);
+                                canvas.toBlob(async (blob) => { if (blob) { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })
+                                    ]);
+                                  }
                                   setShowToast(true);
                                 });
                               };
@@ -927,3 +925,4 @@ Registrations will start by 8am
     </Box>
   );
 }
+

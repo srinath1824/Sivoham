@@ -1,23 +1,21 @@
 import React, { useState, useRef, useEffect, Suspense, lazy } from 'react';
-import Grid from '@mui/material/Grid';
-import { Box, Typography, Link as MuiLink, Alert } from '@mui/material';
+
+import { Alert } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { isFeatureEnabled } from '../config/features.ts';
-const Programs = lazy(() => import('./Programs.tsx'));
-const Gallery = lazy(() => import('./Gallery.tsx'));
+import { isFeatureEnabled } from '../config/features';
+const Programs = lazy(() => import('./Programs'));
+const Gallery = lazy(() => import('./Gallery'));
 // const Testimonials = lazy(() => import('./Testimonials.tsx'));
-const YouTubeShorts = lazy(() => import('../components/YouTubeShorts.tsx'));
+const YouTubeShorts = lazy(() => import('../components/YouTubeShorts'));
 
-const images = [
-  '/logo192.png',
-  '/logo512.png',
-];
+
 
 function getRandomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+/*
 function ScrollingSivohamBackground({ count = 20 }: { count?: number }) {
   // Generate random positions and animation durations for each text
   const texts = Array.from({ length: count }).map((_, i) => {
@@ -46,6 +44,7 @@ function ScrollingSivohamBackground({ count = 20 }: { count?: number }) {
   });
   return <div className="scrolling-sivoham-bg">{texts}</div>;
 }
+*/
 
 // SectionLoader spinner
 function SectionLoader() {
@@ -214,3 +213,4 @@ export default function Home({ user }: HomeProps) {
     </main>
   );
 } 
+

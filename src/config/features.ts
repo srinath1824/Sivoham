@@ -40,10 +40,10 @@ export const FEATURE_FLAGS: FeatureConfig = {
   programs: true,
   gallery: true,
   testimonials: true,
-  courses: false,        // Disable courses for initial release
+  courses: true,        // Disable courses for initial release
   events: true,         // Enable events
-  profile: false,        // Disable profile for initial release
-  admin: false,          // Disable admin for initial release
+  profile: true,        // Disable profile for initial release
+  admin: true,          // Disable admin for initial release
   
   // Home page sections
   heroSection: true,
@@ -56,7 +56,7 @@ export const FEATURE_FLAGS: FeatureConfig = {
   
   // Features
   registration: true,
-  login: false,
+  login: true,
   videoPlayer: false,    // Disable video player for initial release
   eventRegistration: false,
   progressTracking: false,
@@ -70,3 +70,4 @@ export const FEATURE_FLAGS: FeatureConfig = {
 export const isFeatureEnabled = (feature: keyof FeatureConfig): boolean => {
   return FEATURE_FLAGS[feature];
 };
+

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { isFeatureEnabled } from '../config/features.ts';
+import { isFeatureEnabled } from '../config/features';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -37,3 +37,4 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 };
 
 export default ProtectedRoute;
+

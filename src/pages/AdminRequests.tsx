@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Box } from '@mui/material';
-import AdminSidebar from '../components/admin/AdminSidebar.tsx';
-import AdminRequestsContent from '../components/admin/AdminRequestsContent.tsx';
-import EventsManagement from '../components/admin/EventsManagement.tsx';
-import EventRegistrationsApproval from '../components/admin/EventRegistrationsApproval.tsx';
-import EventUsersTab from '../components/admin/EventUsersTab.tsx';
-import AdminUsersTab from '../components/admin/AdminUsersTab.tsx';
-import BarcodeScanner from '../components/admin/BarcodeScanner.tsx';
-import RoleManagement from '../components/admin/RoleManagement.tsx';
-import EventPermissions from '../components/admin/EventPermissions.tsx';
-import InProgressTab from '../components/admin/InProgressTab.tsx';
-import AdminWelcome from '../components/admin/AdminWelcome.tsx';
+import AdminSidebar from '../components/admin/AdminSidebar';
+import AdminRequestsContent from '../components/admin/AdminRequestsContent';
+import EventsManagement from '../components/admin/EventsManagement';
+import EventRegistrationsApproval from '../components/admin/EventRegistrationsApproval';
+import EventUsersTab from '../components/admin/EventUsersTab';
+import AdminUsersTab from '../components/admin/AdminUsersTab';
+import BarcodeScanner from '../components/admin/BarcodeScanner';
+import RoleManagement from '../components/admin/RoleManagement';
+import EventPermissions from '../components/admin/EventPermissions';
+import InProgressTab from '../components/admin/InProgressTab';
+import AdminWelcome from '../components/admin/AdminWelcome';
 
 export default function AdminRequests() {
   const [tab, setTab] = useState(-1); // Default to welcome screen
@@ -41,3 +41,4 @@ export default function AdminRequests() {
     </Box>
   );
 }
+

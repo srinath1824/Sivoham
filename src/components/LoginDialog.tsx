@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Alert, IconButton, TextField } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { login as apiLogin, checkMobileRegistered } from '../services/api.ts';
+import { login as apiLogin, checkMobileRegistered } from '../services/api';
 
 // Custom theme to match application styling
 const theme = createTheme({
@@ -137,13 +137,13 @@ export default function LoginDialog({ open, onClose, onLoginSuccess, onRegisterC
     setLoading(true);
     try {
       const res = await checkMobileRegistered(mobile);
-      if (!res.exists) {
+      if (!(res as any).exists) {
         setError('Mobile number not found. Please register to continue.');
         setShowRegister(true);
         setLoading(false);
         return;
       }
-      if (res.isRejected) {
+      if ((res as any).isRejected) {
         setError('Your registration was rejected. Please contact support or try registering again.');
         setShowRegister(true);
         setLoading(false);
@@ -167,7 +167,7 @@ export default function LoginDialog({ open, onClose, onLoginSuccess, onRegisterC
     setLoading(true);
     try {
       const res = await apiLogin(mobile, otp);
-      onLoginSuccess(res.user, res.token);
+      onLoginSuccess((res as any).user, (res as any).token);
       setMobile('');
       setOtp('');
       setStep('mobile');
@@ -422,3 +422,4 @@ export default function LoginDialog({ open, onClose, onLoginSuccess, onRegisterC
     </ThemeProvider>
   );
 } 
+

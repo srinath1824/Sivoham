@@ -26,3 +26,4 @@ const courseConfig = {
 };
 
 export default courseConfig;
+

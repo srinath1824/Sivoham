@@ -1,18 +1,18 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Checkbox, TablePagination, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { Visibility, Delete } from '@mui/icons-material';
-import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
+import { Delete } from '@mui/icons-material';
+import JaiGurudevLoader from '../JaiGurudevLoader';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-import AdminFilters from './AdminFilters.tsx';
-import PermissionGuard from './PermissionGuard.tsx';
-import { usePermissions } from '../../contexts/PermissionContext.tsx';
+import AdminFilters from './AdminFilters';
+
+import { usePermissions } from '../../contexts/PermissionContext';
 import axios from 'axios';
-import { API_URL } from '../../services/api.ts';
+import { API_URL } from '../../services/api';
 
 export default function AdminUsersTab() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -23,12 +23,12 @@ export default function AdminUsersTab() {
   const [watchTimeDialog, setWatchTimeDialog] = useState<{ open: boolean; user: any | null }>({ open: false, user: null });
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; user: any | null }>({ open: false, user: null });
   const [deleting, setDeleting] = useState(false);
-  const { hasPermission } = usePermissions();
+
 
   useEffect(() => {
     async function fetchUsers() {
       setLoading(true);
-      setError('');
+      // setError('');
       try {
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/admin/all-users?page=${page + 1}&limit=${rowsPerPage}`, { 
@@ -40,7 +40,7 @@ export default function AdminUsersTab() {
         setUsers(usersArray);
         setTotalCount(data.total || usersArray.length);
       } catch (err: any) {
-        setError(err.message || 'Failed to fetch users');
+        console.error('Failed to fetch users:', err.message || 'Failed to fetch users');
         setUsers([]);
         setTotalCount(0);
       } finally {
@@ -581,7 +581,7 @@ export default function AdminUsersTab() {
                   const levelData = watchTimeDialog.user.courseProgress?.levelDetails?.[`level${level}`] || {};
                   const isCompleted = levelData.completed || false;
                   const watchTime = Math.round((levelData.watchTime || 0) / 60); // Convert to hours
-                  const totalDays = levelData.totalDays || 0;
+
                   const dailyProgress = levelData.dailyProgress || {};
                   const sessionsCount = Object.keys(dailyProgress).length;
                   const avgWatchTime = sessionsCount > 0 ? Math.round(levelData.watchTime / sessionsCount) : 0;
@@ -832,3 +832,4 @@ export default function AdminUsersTab() {
     </Box>
   );
 }
+

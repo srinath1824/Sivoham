@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Grid } from '@mui/material';
 import { Box, Typography, Link as MuiLink } from '@mui/material';
 import { useTranslation } from 'react-i18next';
@@ -174,3 +174,4 @@ export default function About() {
     </main>
   );
 }
+

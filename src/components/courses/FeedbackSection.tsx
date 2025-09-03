@@ -1,78 +1,49 @@
-import React from 'react';
 import { Box, Typography, TextField, Button } from '@mui/material';
 
 interface FeedbackSectionProps {
   feedback: string;
-  setFeedback: (val: string) => void;
+  setFeedback: (feedback: string) => void;
   submitting: boolean;
-  completed: boolean;
   onSubmit: () => void;
+  completed: boolean;
   feedbackSubmitted: boolean;
   sx?: any;
 }
 
-/**
- *
- * @param root0
- * @param root0.feedback
- * @param root0.setFeedback
- * @param root0.submitting
- * @param root0.completed
- * @param root0.onSubmit
- * @param root0.feedbackSubmitted
- * @param root0.sx
- */
-const FeedbackSection: React.FC<FeedbackSectionProps> = ({
+export default function FeedbackSection({
   feedback,
   setFeedback,
   submitting,
-  completed,
   onSubmit,
+  completed,
   feedbackSubmitted,
-  sx,
-}) => (
-  <Box sx={{ mt: 4, ...sx }}>
-    <Typography
-      variant="h4"
-      sx={{ fontFamily: 'Lora, serif', color: '#de6b2f', fontWeight: 600, mb: 2 }}
-    >
-      Feedback (Optional)
-    </Typography>
-    <TextField
-      label="Share your thoughts or questions..."
-      value={feedback}
-      onChange={(e) => setFeedback(e.target.value)}
-      fullWidth
-      multiline
-      minRows={2}
-      variant="outlined"
-      sx={{ fontFamily: 'Lora, serif', mb: 2 }}
-      InputLabelProps={{ style: { fontFamily: 'Lora, serif' } }}
-      InputProps={{ style: { fontFamily: 'Lora, serif' } }}
-    />
-    {completed && (
-      <Typography color="success.main" sx={{ fontWeight: 600, mb: 2, mt: 1 }}>
-        Class completed!{' '}
-        {feedbackSubmitted ? 'Feedback submitted.' : 'You can submit feedback anytime.'}
+  sx
+}: FeedbackSectionProps) {
+  return (
+    <Box sx={{ mt: 3, ...sx }}>
+      <Typography variant="h6" sx={{ mb: 2, color: '#b45309', fontWeight: 600 }}>
+        Share Your Experience
       </Typography>
-    )}
-    <Button
-      variant="contained"
-      onClick={onSubmit}
-      disabled={submitting || !completed || !feedback.trim()}
-      sx={{
-        background: '#de6b2f',
-        fontFamily: 'Lora, serif',
-        fontWeight: 600,
-        fontSize: '1rem',
-        borderRadius: 2,
-        boxShadow: 'none',
-        '&:hover': { background: '#b45309' },
-      }}
-    >
-      Submit Feedback
-    </Button>
-  </Box>
-);
-
-export default FeedbackSection;
+      <TextField
+        multiline
+        rows={4}
+        fullWidth
+        placeholder="How was your meditation experience today? Share your thoughts..."
+        value={feedback}
+        onChange={(e) => setFeedback(e.target.value)}
+        sx={{ mb: 2 }}
+      />
+      <Button
+        variant="contained"
+        onClick={onSubmit}
+        disabled={submitting || !feedback.trim()}
+        sx={{
+          background: 'linear-gradient(90deg, #de6b2f 0%, #b45309 100%)',
+          fontWeight: 600
+        }}
+      >
+        {submitting ? 'Submitting...' : feedbackSubmitted ? 'Update Feedback' : 'Submit Feedback'}
+      </Button>
+    </Box>
+  );
+}

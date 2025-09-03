@@ -1,8 +1,8 @@
-import React from 'react';
+
 import Grid from '@mui/material/Grid';
 import { Box, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { isFeatureEnabled } from '../config/features.ts';
+import { isFeatureEnabled } from '../config/features';
 
 interface ProgramsProps {
   user?: any;
@@ -246,3 +246,4 @@ export default function Programs({ user }: ProgramsProps) {
     </main>
   );
 }
+

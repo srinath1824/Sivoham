@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, Chip, Alert } from '@mui/material';
 import { Edit, Delete, PersonAdd } from '@mui/icons-material';
-import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
-import RoleAssignDialog from './RoleAssignDialog.tsx';
-import PermissionMatrix from './PermissionMatrix.tsx';
+import JaiGurudevLoader from '../JaiGurudevLoader';
+import RoleAssignDialog from './RoleAssignDialog';
+import PermissionMatrix from './PermissionMatrix';
 import axios from 'axios';
-import { API_URL } from '../../services/api.ts';
+import { API_URL } from '../../services/api';
 
 interface AdminUser {
   _id: string;
@@ -133,8 +133,8 @@ export default function RoleManagement() {
                 <TableCell>{admin.mobile}</TableCell>
                 <TableCell>
                   <Chip 
-                    label={admin.isSuperAdmin ? 'Super Admin' : 'Admin'}
-                    color={admin.isSuperAdmin ? 'error' : 'primary'}
+                    label={(admin as any).isSuperAdmin ? 'Super Admin' : 'Admin'}
+                    color={(admin as any).isSuperAdmin ? 'error' : 'primary'}
                     size="small"
                   />
                 </TableCell>
@@ -145,7 +145,7 @@ export default function RoleManagement() {
                   {admin.assignedAt ? new Date(admin.assignedAt).toLocaleDateString() : 'N/A'}
                 </TableCell>
                 <TableCell>
-                  {!admin.isSuperAdmin && (
+                  {!(admin as any).isSuperAdmin && (
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <IconButton
                         onClick={() => setEditDialog({ open: true, user: admin })}
@@ -238,3 +238,4 @@ export default function RoleManagement() {
     </Box>
   );
 }
+

@@ -5,7 +5,7 @@ import Hls from 'hls.js';
 import { USE_CDN_HLS } from '../../config/constants';
 
 interface VideoPlayerProps {
-  videoRef: React.RefObject<HTMLVideoElement | null>;
+  videoRef: React.RefObject<HTMLVideoElement>;
   videoUrl: string;
   watchedSeconds: number;
   videoDuration: number;
@@ -88,7 +88,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }}
       >
         <video
-          ref={videoRef}
+          ref={videoRef as React.RefObject<HTMLVideoElement>}
           key={videoUrl}
           src={!USE_HLS_PLAYER || !videoUrl.endsWith('.m3u8') ? videoUrl : undefined}
           controls
@@ -119,3 +119,4 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 };
 
 export default VideoPlayer;
+

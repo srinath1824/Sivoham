@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Grid from '@mui/material/Grid';
 import { Box, Typography, TextField, Button, Alert, MenuItem } from '@mui/material';
-import { register as apiRegister } from '../services/api.ts';
+import { register as apiRegister } from '../services/api';
 
 export default function Contact() {
   const [firstName, setFirstName] = useState('');
@@ -33,7 +33,7 @@ export default function Contact() {
     }
     setLoading(true);
     try {
-      await apiRegister(mobile, firstName, lastName, comment, email, place, gender, Number(age), preferredLang, refSource, referrerInfo, country, profession, address);
+      await apiRegister({ mobile, firstName, lastName, comment, email, place, gender, age: Number(age), preferredLang, refSource, referrerInfo, country, profession, address });
       setSuccess('Thank you! Your message has been sent.');
       setFirstName(''); setLastName(''); setMobile(''); setEmail(''); setComment(''); setMessage(''); setPlace(''); setGender(''); setAge(''); setPreferredLang(''); setRefSource(''); setReferrerInfo(''); setCountry(''); setProfession(''); setAddress('');
     } catch (err: any) {
@@ -105,3 +105,4 @@ export default function Contact() {
     </main>
   );
 }
+

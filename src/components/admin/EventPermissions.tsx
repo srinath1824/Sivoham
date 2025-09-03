@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, Chip, Alert, Switch, FormControlLabel } from '@mui/material';
 import { Edit, Delete, PersonAdd } from '@mui/icons-material';
-import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
+import JaiGurudevLoader from '../JaiGurudevLoader';
 import axios from 'axios';
-import { API_URL } from '../../services/api.ts';
+import { API_URL } from '../../services/api';
 
 interface EventAdmin {
   _id: string;
@@ -378,3 +378,4 @@ export default function EventPermissions() {
     </Box>
   );
 }
+

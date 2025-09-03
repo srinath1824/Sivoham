@@ -3,7 +3,7 @@ import { AppBar, Toolbar, Typography, Box, IconButton, Drawer, List, ListItem, L
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { isFeatureEnabled } from '../config/features.ts';
+import { isFeatureEnabled } from '../config/features';
 
 
 /**
@@ -396,3 +396,4 @@ export default function Navbar({ onLoginClick, user, onLogoutClick }: NavbarProp
     </>
   );
 }
+

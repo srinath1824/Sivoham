@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Autocomplete, Box, Typography } from '@mui/material';
-import PermissionMatrix from './PermissionMatrix.tsx';
+import PermissionMatrix from './PermissionMatrix';
 import axios from 'axios';
-import { API_URL } from '../../services/api.ts';
+import { API_URL } from '../../services/api';
 
 interface User {
   _id: string;
@@ -151,3 +151,4 @@ export default function RoleAssignDialog({ open, onClose, onSuccess }: RoleAssig
     </Dialog>
   );
 }
+

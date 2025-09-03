@@ -134,3 +134,4 @@ export default function PermissionMatrix({ initialPermissions, onSave, onCancel 
     </Box>
   );
 }
+

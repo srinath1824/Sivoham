@@ -27,9 +27,9 @@ import {
   INITIAL_LEVEL_TEST,
   mockCourses,
   getKey,
-} from '../config/constants.ts';
-import courseConfig from '../config/courseConfig.ts';
-import { API_URL } from '../services/api.ts';
+} from '../config/constants';
+import courseConfig from '../config/courseConfig';
+import { API_URL } from '../services/api';
 
 const initialProgress: Record<
   string,
@@ -41,8 +41,8 @@ const initialProgress: Record<
     videoDuration: number;
   }
 > = {};
-mockCourses.forEach((l) =>
-  l.days.forEach((d) => {
+mockCourses.forEach((l: any) =>
+  l.days.forEach((d: any) => {
     initialProgress[getKey(l.level, d.day)] = {
       completed: false,
       feedback: '',
@@ -236,14 +236,14 @@ const Progress: React.FC = () => {
   const progressPercentage = Math.round((completedDays / totalDays) * 100);
 
   // Calculate level-wise progress
-  const levelProgress = mockCourses.map((course) => {
+  const levelProgress = mockCourses.map((course: any) => {
     const levelDays = course.days.length;
     const completedLevelDays = course.days.filter(
-      (d) => progress[getKey(course.level, d.day)].completed,
+      (d: any) => progress[getKey(course.level, d.day)].completed,
     ).length;
     // Find the latest completedAt for this level
     const completedAts = course.days
-      .map((d) => progress[getKey(course.level, d.day)]?.completedAt)
+      .map((d: any) => progress[getKey(course.level, d.day)]?.completedAt)
       .filter(Boolean);
     const levelCompletedAt =
       completedLevelDays === levelDays && completedAts.length > 0
@@ -460,7 +460,7 @@ const Progress: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {levelProgress.map((row, i) => (
+                {levelProgress.map((row: any, i: number) => (
                   <TableRow key={i}>
                     <TableCell sx={{ fontFamily: 'Lora, serif', fontWeight: 600 }}>
                       {row.level}
@@ -584,3 +584,4 @@ const Progress: React.FC = () => {
 };
 
 export default Progress;
+

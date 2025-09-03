@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Box, Typography, Card, CardMedia, CardContent, IconButton, Dialog, DialogContent } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -343,3 +343,4 @@ export default function YouTubeShorts() {
     </Box>
   );
 }
+

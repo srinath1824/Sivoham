@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
-import { API_URL } from '../services/api.ts';
+import { API_URL } from '../services/api';
 
 interface Permissions {
   users: { view: boolean; edit: boolean; delete: boolean };
@@ -91,3 +91,4 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     </PermissionContext.Provider>
   );
 };
+

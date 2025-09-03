@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Box, Typography } from '@mui/material';
 
 interface JaiGurudevLoaderProps {
@@ -69,3 +69,4 @@ export default function JaiGurudevLoader({ size = 'medium' }: JaiGurudevLoaderPr
     </Box>
   );
 }
+

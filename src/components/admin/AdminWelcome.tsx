@@ -1,10 +1,11 @@
+
 import React from 'react';
-import { Box, Typography, Card, CardContent, Grid } from '@mui/material';
+import { Box, Typography, Card, CardContent } from '@mui/material';
 import { 
   People, 
   Event, 
   Analytics, 
-  Settings, 
+ 
   ShoppingCart, 
   VolunteerActivism,
   AdminPanelSettings,
@@ -265,3 +266,4 @@ const AdminWelcome: React.FC = () => {
 };
 
 export default AdminWelcome;
+

@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, MenuItem, TablePagination, Switch, FormControlLabel } from '@mui/material';
-import AdminFilters from './AdminFilters.tsx';
-import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
-import { API_URL } from '../../services/api.ts';
+import AdminFilters from './AdminFilters';
+import JaiGurudevLoader from '../JaiGurudevLoader';
+import { API_URL } from '../../services/api';
 
 export default function EventsManagement() {
   const [events, setEvents] = useState<any[]>([]);
@@ -363,3 +363,4 @@ export default function EventsManagement() {
     </Box>
   );
 }
+

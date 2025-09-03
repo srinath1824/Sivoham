@@ -1,63 +1,97 @@
 {
-  "name": "sivoham-react",
-  "version": "0.1.0",
+  "name": "@sks/frontend",
+  "version": "1.0.0",
   "private": true,
+  "description": "Enterprise-grade spiritual growth platform frontend",
+  "author": "SKS Development Team",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mediapipe/face_mesh": "^0.4.1657299874",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mediapipe/face_mesh": "^0.4.1633559619",
     "@mediapipe/hands": "^0.4.1675469240",
-    "@mui/icons-material": "^7.2.0",
-    "@mui/material": "^7.2.0",
-    "@mui/system": "^7.2.0",
-    "@tensorflow/tfjs": "^4.18.0",
-    "@types/qrcode": "^1.5.5",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "bcryptjs": "^3.0.2",
-    "chart.js": "^4.4.1",
-    "cors": "^2.8.5",
-    "cra-template-pwa-typescript": "2.0.0",
-    "dotenv": "^17.0.1",
-    "express": "^5.1.0",
-    "firebase": "^12.1.0",
-    "hls.js": "^1.6.6",
-    "http-proxy-middleware": "^3.0.5",
-    "i18next": "^25.3.2",
-    "i18next-browser-languagedetector": "^8.2.0",
-    "jsonwebtoken": "^9.0.2",
+    "@mui/icons-material": "^5.14.3",
+    "@mui/material": "^5.14.5",
+    "axios": "^1.5.0",
+    "date-fns": "^2.30.0",
+    "hls.js": "^1.4.10",
+    "i18next": "^23.4.4",
+    "js-cookie": "^3.0.5",
     "jsqr": "^1.4.0",
-    "mongoose": "^8.16.1",
-    "newrelic": "^12.24.0",
-    "qrcode": "^1.5.4",
-    "react": "^19.1.0",
-    "react-barcode": "^1.6.1",
-    "react-dom": "^19.1.0",
-    "react-i18next": "^15.6.0",
-    "react-qr-barcode-scanner": "^2.1.8",
+    "qrcode": "^1.5.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-error-boundary": "^4.0.11",
+    "react-helmet-async": "^1.3.0",
+    "react-i18next": "^13.2.0",
+    "react-router-dom": "^6.15.0",
     "react-scripts": "5.0.1",
-    "web-vitals": "^5.0.3",
+    "typescript": "^4.9.5",
+    "web-vitals": "^2.1.4",
     "xlsx": "^0.18.5"
   },
-  "devServer": {
-    "allowedHosts": [
-      "localhost",
-      "sks-server-production.up.railway.app"
-    ]
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^14.4.3",
+    "@types/jest": "^27.5.2",
+    "@types/js-cookie": "^3.0.6",
+    "@types/node": "^16.18.39",
+    "@types/qrcode": "^1.5.2",
+    "@types/react": "^18.2.17",
+    "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "eslint": "^8.45.0",
+    "eslint-config-prettier": "^8.10.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^2.8.8"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "build:analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
+    "test": "react-scripts test --coverage --watchAll=false",
+    "test:watch": "react-scripts test",
+    "test:ci": "CI=true react-scripts test --coverage --watchAll=false --passWithNoTests",
     "eject": "react-scripts eject",
-    "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}' --max-warnings=0",
-    "format": "prettier --write 'src/**/*.{js,jsx,ts,tsx,json,css,md}'"
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write src/**/*.{ts,tsx,css,md}",
+    "format:check": "prettier --check src/**/*.{ts,tsx,css,md}",
+    "type-check": "tsc --noEmit",
+    "audit:security": "npm audit --audit-level moderate",
+    "audit:fix": "npm audit fix"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "src/**/*.{css,md}": [
+      "prettier --write"
     ]
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/index.tsx",
+      "!src/serviceWorkerRegistration.ts"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    }
   },
   "browserslist": {
     "production": [
@@ -71,21 +105,22 @@
       "last 1 safari version"
     ]
   },
-
-  "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.36.0",
-    "@typescript-eslint/parser": "^8.36.0",
-    "eslint": "^9.30.1",
-    "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsdoc": "^51.3.4",
-    "eslint-plugin-prettier": "^5.5.1",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "framer-motion": "^12.19.1",
-    "postcss": "^8.5.6",
-    "prettier": "^3.6.2",
-    "react-router-dom": "^6.30.1",
-    "typescript": "^4.9.5"
-  }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sivoham/sivoham-react.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sivoham/sivoham-react/issues"
+  },
+  "homepage": "https://sivoham.org",
+  "proxy": "https://sks-server-production.up.railway.app",
+  "keywords": [
+    "spiritual",
+    "kundalini",
+    "yoga",
+    "meditation",
+    "enterprise",
+    "react",
+    "typescript"
+  ]
 }

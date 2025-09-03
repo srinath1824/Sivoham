@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Checkbox, TablePagination } from '@mui/material';
-import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
+import JaiGurudevLoader from '../JaiGurudevLoader';
 import { Download } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
-import AdminFilters from './AdminFilters.tsx';
-import { API_URL } from '../../services/api.ts';
+import AdminFilters from './AdminFilters';
+import { API_URL } from '../../services/api';
 
 export default function EventUsersTab() {
   const [registrations, setRegistrations] = useState<any[]>([]);
@@ -353,3 +353,4 @@ export default function EventUsersTab() {
     </Box>
   );
 }
+

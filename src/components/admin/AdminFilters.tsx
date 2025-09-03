@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, TextField, MenuItem, Grid } from '@mui/material';
 
 interface FilterProps {
@@ -56,7 +55,7 @@ export default function AdminFilters({ filters, onFilterChange, filterOptions }:
                 value={filters[option.key] || ''}
                 onChange={(e) => onFilterChange(option.key, e.target.value)}
                 sx={{ minWidth: '200px' }}
-                InputLabelProps={option.type === 'date' || option.type === 'datetime' ? { shrink: true } : undefined}
+                InputLabelProps={option.type === 'date' || option.type === 'datetime' ? { shrink: true } : {}}
               />
             )}
           </Grid>
@@ -65,3 +64,4 @@ export default function AdminFilters({ filters, onFilterChange, filterOptions }:
     </Box>
   );
 }
+

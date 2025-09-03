@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, IconButton, Typography, Divider } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import PeopleIcon from '@mui/icons-material/People';
@@ -10,7 +9,7 @@ import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
-import { usePermissions } from '../../contexts/PermissionContext.tsx';
+import { usePermissions } from '../../contexts/PermissionContext';
 import { useState, useEffect } from 'react';
 
 interface AdminSidebarProps {
@@ -55,7 +54,7 @@ export default function AdminSidebar({ tab, setTab, drawerOpen, setDrawerOpen }:
   );
   
   // Other tabs are available to all admins
-  const otherTabsFiltered = otherTabs;
+  // Other tabs are available to all admins
   
   const eventTabsFiltered = eventTabs.filter(tabItem => {
     if (isSuperAdmin()) return true;
@@ -194,3 +193,4 @@ export default function AdminSidebar({ tab, setTab, drawerOpen, setDrawerOpen }:
     </>
   );
 }
+

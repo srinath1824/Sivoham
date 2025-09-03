@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { getUsers, approveUser, rejectUser, bulkApproveUsers, bulkRejectUsers } from '../../services/api.ts';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, IconButton, TablePagination, Select, MenuItem, FormControl, InputLabel, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { useEffect, useState, useMemo } from 'react';
+import { approveUser, rejectUser, bulkApproveUsers, bulkRejectUsers } from '../../services/api';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Alert, Checkbox, IconButton, TablePagination, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-import AdminFilters from './AdminFilters.tsx';
-import JaiGurudevLoader from '../JaiGurudevLoader.tsx';
+import AdminFilters from './AdminFilters';
+import JaiGurudevLoader from '../JaiGurudevLoader';
 import axios from 'axios';
-import { API_URL } from '../../services/api.ts';
+import { API_URL } from '../../services/api';
 
 export default function AdminRequestsContent() {
   const [users, setUsers] = useState<any[]>([]);
@@ -536,3 +536,4 @@ export default function AdminRequestsContent() {
     </Box>
   );
 }
+

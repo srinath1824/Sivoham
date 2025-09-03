@@ -3,19 +3,19 @@ import React, { useState, useRef } from 'react';
 import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import './Courses.css';
-import Sidebar from '../components/courses/Sidebar.tsx';
-import VideoPlayer from '../components/courses/VideoPlayer.tsx';
-import FeedbackSection from '../components/courses/FeedbackSection.tsx';
-import VideoMeditationTest from '../components/courses/VideoMeditationTest.tsx';
+import Sidebar from '../components/courses/Sidebar';
+import VideoPlayer from '../components/courses/VideoPlayer';
+import FeedbackSection from '../components/courses/FeedbackSection';
+import VideoMeditationTest from '../components/courses/VideoMeditationTest';
 import {
   STORAGE_KEY,
   INITIAL_LEVEL_TEST,
   mockCourses,
   getKey,
   COURSE_ACCESS_WINDOWS,
-} from '../config/constants.ts';
-import courseConfig from '../config/courseConfig.ts';
-import { login as apiLogin, register as apiRegister, updateProgress, getProgress, API_URL } from '../services/api.ts';
+} from '../config/constants';
+import courseConfig from '../config/courseConfig';
+import { login as apiLogin, register as apiRegister, updateProgress, getProgress, API_URL } from '../services/api';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -56,7 +56,7 @@ function LoginDialog({ open, onClose, onLoginSuccess }: { open: boolean, onClose
     setLoading(true);
     try {
       const res = await apiLogin(mobile, otp);
-      onLoginSuccess(res.user, res.token);
+      onLoginSuccess((res as any).user, (res as any).token);
       setMobile('');
       setOtp('');
     } catch (err: any) {
@@ -112,7 +112,7 @@ function RegistrationDialog({ open, onClose, mobile = '', onRegisterSuccess }: {
     setLoading(true);
     try {
       const res = await apiRegister({ mobile, firstName, lastName, comment, email });
-      onRegisterSuccess(res.user, res.token);
+      onRegisterSuccess((res as any).user, (res as any).token);
       setFirstName('');
       setLastName('');
       setComment('');
@@ -449,10 +449,10 @@ const Courses = () => {
       });
       
       // Use courseProgress from response if available
-      if (response.courseProgress) {
-        console.log('Course Progress:', response.courseProgress);
-        setCourseProgress(response.courseProgress);
-        localStorage.setItem('courseProgress', JSON.stringify(response.courseProgress));
+      if ((response as any).courseProgress) {
+        console.log('Course Progress:', (response as any).courseProgress);
+        setCourseProgress((response as any).courseProgress);
+        localStorage.setItem('courseProgress', JSON.stringify((response as any).courseProgress));
       }
       
       // Refetch progress from backend
@@ -529,10 +529,10 @@ const Courses = () => {
       });
       
       // Use courseProgress from response if available
-      if (response.courseProgress) {
-        console.log('Course Progress (Feedback):', response.courseProgress);
-        setCourseProgress(response.courseProgress);
-        localStorage.setItem('courseProgress', JSON.stringify(response.courseProgress));
+      if ((response as any).courseProgress) {
+        console.log('Course Progress (Feedback):', (response as any).courseProgress);
+        setCourseProgress((response as any).courseProgress);
+        localStorage.setItem('courseProgress', JSON.stringify((response as any).courseProgress));
       }
       
       // Refetch progress from backend
@@ -552,11 +552,11 @@ const Courses = () => {
   const fetchAndUpdateProgress = async () => {
     const progressArr = await getProgress();
     const progObj = { ...INITIAL_LEVEL_TEST };
-    progressArr.forEach((p) => {
+    progressArr.forEach((p: any) => {
       if (p.level === 2 && p.day === 4) {
         progObj.meditationTestPassed = p.completed;
       } else {
-        progObj[getKey(p.level, p.day)] = {
+        (progObj as any)[getKey(p.level, p.day)] = {
           completed: p.completed,
           feedback: p.feedback,
           completedAt: p.completedAt ? new Date(p.completedAt).getTime() : undefined,
@@ -960,7 +960,7 @@ const Courses = () => {
                       {isDayMeditationTest(selectedLevel, selectedDay) ? null : (
                         <VideoPlayer
                           videoUrl={currentDayObj?.videoUrl || ''}
-                          videoRef={videoRef}
+                          videoRef={videoRef as React.RefObject<HTMLVideoElement>}
                           watchedSeconds={watchedSeconds}
                           setWatchedSeconds={setWatchedSeconds}
                           videoDuration={videoDuration}
@@ -1103,3 +1103,4 @@ const Courses = () => {
 };
 
 export default Courses;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -21,7 +21,7 @@ export default function EventScrollBanner() {
 
   const fetchUpcomingEvents = async () => {
     try {
-      const { API_URL } = await import('../services/api.ts');
+      const { API_URL } = await import('../services/api');
       const response = await fetch(`${API_URL}/events/upcoming-banner`);
       if (response.ok) {
         const data = await response.json();
@@ -41,10 +41,11 @@ export default function EventScrollBanner() {
   if (!isVisible || events.length === 0) return null;
 
   const upcomingEvent = events[0];
-  const eventDate = new Date(upcomingEvent.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const registrationDeadline = upcomingEvent.registrationDeadline ? new Date(upcomingEvent.registrationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+  if (!upcomingEvent) return null;
+  const eventDate = new Date(upcomingEvent?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const registrationDeadline = upcomingEvent?.registrationDeadline ? new Date(upcomingEvent?.registrationDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
   
-  const scrollText = `🕉️ Come and receive the Divine Blessings of Parama pujya Sree Jeeveswara Yogi 🙏 | 🎉 Upcoming Event: ${upcomingEvent.name} | 📍 ${upcomingEvent.location} | 📅 ${eventDate} | ✨ Visit Events page to register and be part of this sacred gathering | ${registrationDeadline ? `⏰ Registration closes: ${registrationDeadline} |` : ''} 🌟 Experience spiritual transformation and inner awakening 🕉️           `;
+  const scrollText = `🕉️ Come and receive the Divine Blessings of Parama pujya Sree Jeeveswara Yogi 🙏 | 🎉 Upcoming Event: ${upcomingEvent?.name} | 📍 ${upcomingEvent?.location} | 📅 ${eventDate} | ✨ Visit Events page to register and be part of this sacred gathering | ${registrationDeadline ? `⏰ Registration closes: ${registrationDeadline} |` : ''} 🌟 Experience spiritual transformation and inner awakening 🕉️           `;
 
   return (
     <Box
@@ -97,3 +98,4 @@ export default function EventScrollBanner() {
     </Box>
   );
 }
+
