@@ -5,7 +5,7 @@ import JaiGurudevLoader from '../JaiGurudevLoader';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import AdminFilters from './AdminFilters';
 
-import { usePermissions } from '../../contexts/PermissionContext';
+
 import axios from 'axios';
 import { API_URL } from '../../services/api';
 
